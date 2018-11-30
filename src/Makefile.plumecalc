@@ -1,0 +1,79 @@
+#***********************************************************************
+#
+# Makefile for plumecalc
+#
+# Jul 6 2010 /scratch/ymp/zvd/PLUMECALC/SRC_V2.2/OBJECTS_PGI64/Makefile
+#
+#***********************************************************************
+SRCDIR = ./
+WORKDIR = ./
+INCDIR = ./
+OBJDIR = ./
+
+
+VPATH = ${WORKDIR}
+
+FC = /opt/pgi/linux86-64/6.2/bin/pgf90
+DFLAG =
+#FFLAGS = -g -C -Kieee -Mlfs
+FFLAGS = -fast -Kieee -Mlfs
+
+STATIC = -Bstatic
+
+#******* SOURCE FILES ****************************************
+MOD_SRC = ${SRCDIR}comgrid.f ${SRCDIR}comki.f ${SRCDIR}commdot.f \
+	${SRCDIR}comparttr.f ${SRCDIR}compfrac.f ${SRCDIR}comrock.f \
+	${SRCDIR}comsim.f ${SRCDIR}comunits.f
+
+MODULES = comgrid.mod comki.mod commdot.mod comparttr.mod \
+        compfrac.mod comrock.mod comsim.mod comunits.mod 
+
+MOD_OBJ = comgrid.o comki.o commdot.o comparttr.o compfrac.o \
+        comrock.o comsim.o comunits.o 
+
+OBJECTS = calculate_favg.o calculate_plume.o delayed_times.o \
+	find_closest_curve.o ftime.o indices.o indiffusion.o \
+	initdata2.o inrock_plume.o integrate_curve.o interp.o \
+	interp2.o interp4.o interp8.o inverf.o near3.o null1.o \
+	open_file.o output_results.o parse_string.o \
+	perform_calculations.o plumecalc.o ran_sp.o read_file_info.o \
+	read_flux_data.o read_grid_info.o read_mdot_info.o \
+	read_output_info.o read_rock_info.o read_sim_info.o \
+	read_sptr_info.o read_tcurve.o sort_values.o svdcmp_new.o \
+	time_delay.o zone_nnum.o
+
+OBJECTS2 = calculate_favg_test1.o calculate_plume.o delayed_times.o \
+	find_closest_curve.o ftime.o indices.o indiffusion.o \
+	initdata2.o inrock_plume.o integrate_curve.o interp.o \
+	interp2.o interp4.o interp8.o inverf.o near3.o null1.o \
+	open_file.o output_results_flux.o parse_string.o \
+	perform_calculations.o plumecalc.o ran_sp.o read_file_info.o \
+	read_flux_data.o read_grid_info.o read_mdot_info.o \
+	read_output_info.o read_rock_info.o read_sim_info.o \
+	read_sptr_info.o read_tcurve.o sort_values.o svdcmp_new.o \
+	time_delay.o zone_nnum.o
+
+#****************** EXECUTABLE *******************************
+
+all: modules plumecalc
+
+modules : ${MOD_SRC} ${MODULES}
+
+plumecalc : ${MOD_OBJ} ${OBJECTS}
+	${FC} ${FFLAGS} ${MOD_OBJ} ${OBJECTS} ${STATIC} -o plumecalc_V2.2lnx
+
+plumecalc_test : ${MOD_OBJ} ${OBJECTS2}
+	${FC} ${FFLAGS} ${MOD_OBJ} ${OBJECTS2} ${STATIC} -o plumecalc_V2.2_testlnxdbg
+
+%.mod : ${SRCDIR}%.f
+	${FC} ${DFLAG} ${FFLAGS} $< -c
+
+%.o : ${SRCDIR}%.f
+	${FC} ${DFLAG} ${FFLAGS} $< -c
+
+list:
+	echo ${MOD_SRC}
+
+clean : 
+	rm -f *.o *.mod
+
