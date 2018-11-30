@@ -49,7 +49,8 @@
      3     cell_path, kdecay, end_no, step_no, cfavg, cmin,
      4     conc_total, zone_vol
       use comrock, only : itrc_diff, matrix_por, ps
-      use comsim, only : nfavgzones, index_favg, water_flux, alt_string
+      use comsim, only : nfavgzones, index_favg, water_flux, alt_string,
+     2     prntvar
       use comunits, only : error_unit_number, flux_unit_number
       implicit none
 
@@ -93,6 +94,11 @@
          end if
          iarrayend = end_no_mdot(isource)
          arraylen = iarrayend-iarraystart+1
+! Integrate source function to detrmine solute that entered in 
+! this time interval
+         if (prntvar(2))
+     2        call mdot_integral(current_time, iarraystart, iarrayend)
+
 !      FOR each particle in this source
          do i = istart, iend, istep
 

@@ -50,8 +50,9 @@
       use comparttr, only : start_no, npart, cell_index, n_cells,
      2     time_packed, cell_packed, n_part_source, concentration, 
      3     cell_path, n_touched_cells, touched_cells, kdecay, end_no, 
-     4     step_no, cmin, adv_packed, conc_mobile, conc_total
-      use comsim, only : out_cell
+     4     step_no, cmin, adv_packed, conc_mobile, conc_total, 
+     5     conc_mobtot
+      use comsim, only : out_cell, prntvar
       implicit none
 
       integer isource
@@ -92,6 +93,12 @@
          end if
          iarrayend = end_no_mdot(isource)
          arraylen = iarrayend-iarraystart+1
+
+! Integrate source function to detrmine solute that entered in 
+! this time interval
+         if (prntvar(2))
+     2        call mdot_integral(current_time, iarraystart, iarrayend)
+
 !     FOR each particle in this source
          do i = istart, iend, istep
 
@@ -166,6 +173,7 @@ c change units of the cell volume from m^3 to l so that the
 c answer will be in moles/l instead of moles/m^3
          sxliter=sx1(cellno)*1000.
          conc_total(i) = concentration(i)
+         conc_mobtot(i) = conc_mobile(i)
 !     perform correction for porosity and cell size
          if (diffusion_model) then
             if (itrc_diff(i).ne.0) then
@@ -196,6 +204,7 @@ c     2           (ps(cellno)*sxliter*rfac(cellno))
          if (concentration(i) .lt. cmin) concentration(i) = 0.
          if (conc_mobile(i) .lt. cmin) conc_mobile(i) = 0.
          if (conc_total(i) .lt. cmin) conc_total(i) = 0.
+         if (conc_mobtot(i) .lt. cmin) conc_mobtot(i) = 0. 
       end do
 !   ENDFOR each cell
 

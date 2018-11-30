@@ -78,6 +78,9 @@
 !     conc_total_sg    real*8  array of computed total concentrations 
 !                                for the cells in the compact array, 
 !                                array of size n_touched_cells_sg
+!     conc_mobtot_sg   real*8  array of computed total mobile concentrations
+!                                for the cells in the compact array, 
+!                                array of size n_touched_cells_sg
 !     nxyz             integer array of size (n_touched_cells,3) containing the
 !                                number of subgrid refinements for each of the
 !                                touched cells. 
@@ -129,6 +132,7 @@ c      real*8,  allocatable :: z_packed_sg(:)         ! size n_packed_sg
       real*8,  allocatable :: concentration_sg(:)    ! size n_touched_cells_sg
       real*8,  allocatable :: conc_mobile_sg(:)      ! size n_touched_cells_sg
       real*8,  allocatable :: conc_total_sg(:)       ! size n_touched_cells_sg
+      real*8,  allocatable :: conc_mobtot_sg(:)      ! size n_touched_cells_sg
       integer, allocatable :: nxyz(:,:)              ! size n_touched_cells
       integer, allocatable :: ip_touched_cells(:)    ! size n_grid_points
       integer, allocatable :: ip_touched_cells_sg(:) !  size n_grid_points

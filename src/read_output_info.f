@@ -99,7 +99,7 @@
       use comgrid, only : n_grid_points, sx1
       use comparttr, only : cell_path, cell_packed, n_packed, cfavg, 
      2     n_touched_cells, touched_cells, concentration, conc_mobile,
-     3     conc_total, zone_vol
+     3     conc_total, conc_mobtot, zone_vol
       use comparttr_sg, only : if_subgrid
       use comsim, only : total_time, n_out_times, out_string, ntimes,
      2     delta_time, out_times, noutnodes, ioutnode, out_cell,
@@ -107,6 +107,7 @@
      4     alt_string, nodes_favg, prntvar
       use comunits, only : error_unit_number, sim_unit_number, 
      2     flux_unit_number
+      use commdot, only : mdot_out_file
       implicit none
 
       integer i
@@ -175,6 +176,7 @@
       if(conc_string.ne.'favg') then
          conc_string = 'resc'
          allocate(conc_total(n_touched_cells))
+         allocate(conc_mobtot(n_touched_cells))
          backspace sim_unit_number
       else
          read(sim_unit_number,'(a3)') alt_string
@@ -316,9 +318,20 @@ c     Output fluxes at first time (tecplot)
                   prntvar(1) = .true.
                case ('mo','MO')
 c     Output total moles (mass) for each time step (tecplot)
-c                  prntvar(2) = .true.
                   if (alt_string .ne. 'alt') prntvar(2) = .true.
 c     Total moles is undefined for the alternate flux output
+c     Output total mobile moles, too
+                  if (cmsg(i)(3:3) .eq. 'b' .or. cmsg(i)(3:3) .eq. 'B')
+     2                 prntvar(3) = .true.
+c     Check to see if a file has been designated for the results of the
+c     source term integration
+                  read(sim_unit_number,'(a80)') dummy_string
+                  if (dummy_string(1:4) .eq. 'file') then
+                     read(sim_unit_number,'(a80)') mdot_out_file
+                  else
+                     backspace (sim_unit_number)
+                     mdot_out_file = 'mdot_integral.dat'
+                  end if
                end select
             end if
          end do

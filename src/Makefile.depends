@@ -25,10 +25,12 @@ interp.o: compfrac.o
 line_plane_t.o: comparttr_sg.o comunits.o
 local_global.o: comparttr_sg.o comunits.o
 march_particles.o: comparttr.o comparttr_sg.o comunits.o
+mdot_integral.o: commdot.o comparttr.o
 near3.o: comgrid.o
 next_cell_ijk.o: comparttr_sg.o
 open_file.o: comunits.o
-output_results.o: comgrid.o comparttr.o comparttr_sg.o comsim.o comunits.o
+output_results.o: comgrid.o commdot.o comparttr.o comparttr_sg.o comsim.o
+output_results.o: comunits.o
 parametric_line.o: comunits.o
 particle_setup.o: comparttr.o comparttr_sg.o
 path_arrays_sg.o: comparttr.o comparttr_sg.o
@@ -38,7 +40,8 @@ read_file_info.o: comgrid.o comparttr_sg.o comunits.o
 read_flux_data.o: comgrid.o comsim.o comunits.o
 read_grid_info.o: comgrid.o comunits.o
 read_mdot_info.o: commdot.o comunits.o
-read_output_info.o: comgrid.o comparttr.o comparttr_sg.o comsim.o comunits.o
+read_output_info.o: comgrid.o commdot.o comparttr.o comparttr_sg.o comsim.o
+read_output_info.o: comunits.o
 read_rock_info.o: comgrid.o comunits.o
 read_sim_info.o: comgrid.o commdot.o comparttr.o comunits.o
 read_sptr_corn_dxyz_info.o: comgrid.o comparttr_sg.o comunits.o

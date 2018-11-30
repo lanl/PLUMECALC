@@ -18,7 +18,7 @@
 # Edit FC,LIBRARY,FFLAGS for your environment and compiler 
 #***********************************************************************
 
-SRCDIR = /scratch/nts/zvd/PLUMECALC/SUBGRID/SRC_V2.3.1/
+SRCDIR = /scratch/nts/zvd/PLUMECALC/SUBGRID/SRC_V2.3.x/
 WORKDIR = ./
 INCDIR = ./
 OBJDIR = ./
@@ -40,7 +40,7 @@ endif
 
 # Linux OS ------------------------------
 ifeq (${OPSYS}, Linux)
-OSTAG = pgi${BIT}
+OSTAG = beta_pgi${BIT}
 ifeq (${BIT},64)
 FC = /opt/pgi/linux86-64/6.2/bin/pgf90
 LIBRARY = -L/opt/pgi/linux86-64/6.2/lib
@@ -67,7 +67,7 @@ OBJECTS := $(patsubst ${SRCDIR}%.f,%.o,$(wildcard ${SRCDIR}*.f))
 all : plumecalc_sg
 
 plumecalc_sg : ${OBJECTS}  
-	${PURIFYIT} ${FC} ${FFLAGS} ${OBJECTS} ${LIBRARY} ${STATIC} -o plumecalc_sg_V2.3.1${OSTAG}${DATE}
+	${PURIFYIT} ${FC} ${FFLAGS} ${OBJECTS} ${LIBRARY} ${STATIC} -o plumecalc_sg_V2.3.2${OSTAG}${DATE}
 
 %.o : ${SRCDIR}%.f
 	${FC} ${DFLAG} ${FFLAGS} $< -c

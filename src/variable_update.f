@@ -59,6 +59,10 @@ c pack the cell_packed, time_packed, and cell_index arrays
          allocate(conc_total(n_touched_cells_sg))
          conc_total = conc_total_sg
          deallocate(conc_total_sg)
+         deallocate(conc_mobtot)
+         allocate(conc_mobtot(n_touched_cells_sg))
+         conc_mobtot = conc_mobtot_sg
+         deallocate(conc_mobtot_sg)
       end if
 !
 !     what to do with cfavg

@@ -86,6 +86,10 @@
 !     conc_total      real*8   array of computed total concentrations 
 !                                for the cells in the compact array, 
 !                                array of size n_touched_cells
+!     conc_mobtot     real*8   array of computed total mobile 
+!                                concentrations for the cells in the 
+!                                compact array, array of size 
+!                                n_touched_cells
 !     kdecay          real*8   1st order decay constant
 !     cfavg           real*8   computed outlet concentration from each 
 !                                flux averaged concentration zone, 
@@ -122,6 +126,7 @@
       real*8, allocatable :: concentration(:)
       real*8, allocatable :: conc_mobile(:)
       real*8, allocatable :: conc_total(:)
+      real*8, allocatable :: conc_mobtot(:)
       real*8, allocatable :: zone_vol(:)
       real*8 kdecay
       real*8, allocatable :: cfavg(:)

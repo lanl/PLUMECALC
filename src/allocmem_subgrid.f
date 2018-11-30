@@ -42,6 +42,7 @@ c      allocate(z_sg(n_grid_points_sg))
       allocate(concentration_sg(n_touched_cells_sg_max))
       allocate(conc_mobile_sg(n_touched_cells_sg_max))
       allocate(conc_total_sg(n_touched_cells_sg_max))
+      allocate(conc_mobtot_sg(n_touched_cells_sg_max))
       allocate(izonef_sg(n_grid_points_sg))
 c      allocate(id_parent_sg(n_grid_points_sg))
       
@@ -61,6 +62,7 @@ c      allocate(id_parent_sg(n_grid_points_sg))
       concentration_sg=0.
       conc_mobile_sg=0.
       conc_total_sg=0.
+      conc_mobtot_sg=0.
       izonef_sg=0
 
       water_flux_sg=0.

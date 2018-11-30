@@ -42,13 +42,15 @@
      2     conc_string, nfavgzones, water_flux, sparse, alt_string,
      3     index_favg, nodes_favg, prntvar
       use comparttr, only : n_touched_cells, touched_cells, cfavg, 
-     2     concentration, cell_path, cthreshold, conc_mobile, conc_total
+     2     concentration, cell_path, cthreshold, conc_mobile, 
+     3     conc_total, conc_mobtot, kdecay
       use comgrid, only : x, y, z
       use comparttr_sg, only : if_subgrid, id_parent_sg
+      use commdot, only : mdot_total, n_sources
       implicit none
 
       integer i, indx, len
-      real*8 current_time, cum_moles
+      real*8 current_time, cum_moles, cum_mobile
       character*50 formstring
       character*120 data_string
       logical first, alt
@@ -217,7 +219,13 @@ c     Output flux averaged concentrations
                     end do
                  end if
                end if
-               if (prntvar(2)) write (output_unit_number, 80) cum_moles
+               if (prntvar(2)) then
+                  write (output_unit_number, 80) cum_moles
+                  write (output_unit_number, 81) 
+     2                 mdot_total(n_sources + 1, 1)
+                  if (kdecay .ne. 0.) write (output_unit_number, 82) 
+     2                 mdot_total(n_sources + 1, 2)
+               end if
 
             else if (out_string(1:4) .eq. 'pckd') then
 !               if (first) write(output_unit_number, *) n_touched_cells
@@ -268,7 +276,10 @@ c     Output flux averaged concentrations
      &        '"node_subgrid", "concentration (moles)", "total moles"')
  76      format ('variables= "x", "y", "z", "node_parent", ',
      &        '"node_subgrid", "concentration (moles)"')
- 80      format ('text = "Total moles = ', g16.9, '"')
+ 80      format ('text = "Total moles in system = ', g16.9, '"')
+ 81      format ('text = "Total moles from source = ', g16.9, '"')
+ 82      format ('text = "Total moles decayed = ', g16.9, '"')
+ 84      format ('text = "Total mobile moles in system = ', g16.9, '"')
  85      format (3(g16.9, 1x), i7, 1x, g16.9)
  86      format (1x, g16.9)
  87      format (a)
@@ -285,20 +296,28 @@ c     Resident concentrations
             end if
             if (out_string(1:3).eq.'tec') then
                if (if_subgrid .eq. 0) then
-                  if (prntvar(1) .and. prntvar(2)) then
+                  if (prntvar(1) .and. prntvar(2) .and. prntvar(3)) then
+                     write(output_unit_number, 31)
+                  else if (prntvar(1) .and. prntvar(2)) then
                      write(output_unit_number, 91)
                   else if (prntvar(1)) then
                      write(output_unit_number, 92)
+                  else if (prntvar(2) .and. prntvar(3)) then
+                     write(output_unit_number, 33)
                   else if (prntvar(2)) then
                      write(output_unit_number, 93)
                   else
                      write(output_unit_number, 94)
                   end if
                else
-                  if (prntvar(1) .and. prntvar(2)) then
+                  if (prntvar(1) .and. prntvar(2) .and. prntvar(3)) then
+                     write(output_unit_number, 35)
+                  else if (prntvar(1) .and. prntvar(2)) then
                      write(output_unit_number, 95)
                   else if (prntvar(1)) then
                      write(output_unit_number, 96)
+                  else if (prntvar(2) .and. prntvar(3)) then
+                     write(output_unit_number, 37)
                   else if (prntvar(2)) then
                      write(output_unit_number, 97)
                   else
@@ -324,20 +343,31 @@ c     Resident concentrations
  91      format ('variables= "x", "y", "z", "node", ',
      &        '"concentration (moles/l)", "mobile conc (moles/l)", '
      &        '"total moles"')
+ 31      format ('variables= "x", "y", "z", "node", ',
+     &        '"concentration (moles/l)", "mobile conc (moles/l)", '
+     &        '"total moles", "total mobile"')
  92      format ('variables= "x", "y", "z", "node", ',
      &        '"concentration (moles/l)", "mobile conc (moles/l)"')
  93      format ('variables= "x", "y", "z", "node", ',
      &        '"mobile conc (moles/l)", "total moles"')
+ 33      format ('variables= "x", "y", "z", "node", ',
+     &        '"mobile conc (moles/l)", "total moles", "total mobile"')
  94      format ('variables= "x", "y", "z", "node", ',
      &        '"mobile conc (moles/l)"')
  95      format ('variables= "x", "y", "z", "node_parent", ',
      &        '"node_subgrid", "concentration (moles/l)", ',
      &        '"mobile conc (moles/l)", "total moles"')
+ 35      format ('variables= "x", "y", "z", "node_parent", ',
+     &        '"node_subgrid", "concentration (moles/l)", ',
+     &        '"mobile conc (moles/l)", "total moles", "total mobile"')
  96      format ('variables= "x", "y", "z", "node_parent", ',
      &        '"node_subgrid", "concentration (moles/l)", ',
      &        '"mobile conc (moles/l)"')
  97      format ('variables= "x", "y", "z", "node_parent", ',
      &        '"node_subgrid", "mobile conc (moles/l)", "total moles"')
+ 37      format ('variables= "x", "y", "z", "node_parent", ',
+     &        '"node_subgrid", "mobile conc (moles/l)", "total moles",',
+     &        ' "total mobile"')
  98      format ('variables= "x", "y", "z", "node_parent", ',
      &        '"node_subgrid", "mobile conc (moles/l)"')
          if(out_string(1:4).eq.'pckd') then
@@ -346,6 +376,7 @@ c     Resident concentrations
      &           i=1, n_touched_cells)
          elseif(out_string(1:4).eq.'tecp') then
             cum_moles = 0.d0
+            cum_mobile = 0.d0
             do i = 1, n_touched_cells
                data_string = ''
                if (first) then
@@ -385,10 +416,24 @@ c     Resident concentrations
                   write (data_string(len + 1 : 120), 86) 
      &                 conc_total(i)
                end if
-               cum_moles = cum_moles + conc_total(i) 
+               if (prntvar(3)) then
+                  len = len_trim(data_string)
+                  write (data_string(len + 1 : 120), 86) 
+     &                 conc_mobtot(i)
+               end if
+               cum_moles = cum_moles + conc_total(i)
+               cum_mobile = cum_mobile + conc_mobtot(i)
                write(output_unit_number, 87) trim(data_string)
             end do
-            if (prntvar(2)) write (output_unit_number, 80) cum_moles
+            if (prntvar(2)) then
+               write (output_unit_number, 80) cum_moles
+               if (prntvar(3))
+     2              write (output_unit_number, 84) cum_mobile
+               write (output_unit_number, 81) 
+     2              mdot_total(n_sources + 1, 1)
+               if (kdecay .ne. 0.) write (output_unit_number, 82) 
+     2              mdot_total(n_sources+1, 2)
+           end if
 
  100        format (1x, 3(g16.9, 1x), i7, 3(1x, g16.9))
  101        format ('zone t="time ',g16.9,'", VARSHARELIST = ([1-3]=1)')

@@ -34,13 +34,23 @@
 !                                size n_size_mdot
 !     time_mdot       real*8   array of times associated with the time,
 !                                mdot curves, array of size n_size_mdot
+!     mdot_total      real*8   array of cumulative moles that have 
+!                                entered system for each source during
+!                                the current time interval, 
+!                                array of size nsources + 1
+!     mdot_out_unit  integer   unit number of mdot_out_file 
+!     mdot_out_file  char*100  name of file to be used for output of the
+!                                integrated source functions
 !***********************************************************************
 
       integer n_sources
       integer n_size_mdot
+      integer mdot_out_unit
       integer, allocatable :: end_no_mdot(:)
       integer, allocatable :: column_number(:)
       real*8, allocatable :: mdot(:)
       real*8, allocatable :: time_mdot(:)
+      real*8, allocatable :: mdot_total(:,:)
+      character(100) :: mdot_out_file
 
       end module commdot
