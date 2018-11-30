@@ -27,10 +27,12 @@
 !     - simulation control file
 !     - output file
 !     - type curve data file
+!     READ subgrid flag
 !
 !***********************************************************************
 
       use comgrid, only : lda, iflux
+      use comparttr_sg, only : if_subgrid
       use comunits
       implicit none
 
@@ -69,6 +71,7 @@
       sim_file = ''
       output_file = ''
       tcurve_file = ''
+      if_subgrid = 0
 
 ! Have command line arguments been entered
       nargc = iargc()
@@ -205,13 +208,22 @@
       read(ctrl_unit_number,'(a200)') output_file
       output_unit_number = open_file(output_file, iform, file_stat)
 
-!     - type curve data file
+!     - type curve data file and/or subgrid flag
       file_stat = 'OLD'
-      read(ctrl_unit_number,'(a200)', end = 100) tcurve_file
- 100  if (tcurve_file .ne. '') then
+      input_msg = ''
+      read(ctrl_unit_number,'(a200)', end = 100) input_msg
+ 100  if (input_msg .ne. '' .and. input_msg(1:7) .ne. 'subgrid'
+     &     .and. input_msg(1:7) .ne. 'SUBGRID') then
+         tcurve_file = input_msg
          tcurve_unit_number = open_file(tcurve_file, iform, file_stat)
+         input_msg = ''
+         read(ctrl_unit_number,'(a200)', end = 300) input_msg
       else
          tcurve_unit_number = 0
+      end if
+ 300  if (input_msg(1:7) .eq. 'subgrid'
+     &     .or. input_msg(1:7) .eq. 'SUBGRID') then
+         if_subgrid = 1
       end if
 
       close ( ctrl_unit_number )

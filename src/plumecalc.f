@@ -1,7 +1,5 @@
       program plumecalc
 !***********************************************************************
-! $Id: plumecalc.f,v 1.1 2006/05/17 15:23:23 zvd Exp $
-!***********************************************************************
 !  Copyright, 2002, 2004,  The  Regents of the University of California.
 !  This  program  was  prepared by  the  Regents  of the  University  of
 !  California  at Los Alamos National Laboratory (the  University) under
@@ -26,15 +24,18 @@
 !***********************************************************************
 !     REQUIREMENTS
 !
-!     1. Read file information
-!     2. Read simulation parameter information
-!     3. Read particle tracking information
-!     4. Read grid information
-!     5. Read rock property and sorption information
-!     6. Read source term information
-!     7. Read output information
-!     8. Perform convolution calculation at each time
-!     9. Output concentration information
+!     1.  Read file information
+!     2.  Read simulation parameter information
+!     3.  Read particle tracking information
+!     4.  Read grid information
+!     5.  Read rock property and sorption information
+!     6.  Read source term information
+!     7.  Read output information
+!     8.  If this is a subgrid run
+!         - Read subgrid information
+!         - Set up subgrid data structures
+!     9.  Perform convolution calculation at each time
+!     10. Output concentration information
 !
 !***********************************************************************
 !     DEFINITION of variables
@@ -78,12 +79,17 @@
 !     
 !     7. Read output information
 !
-!     8. Perform convolution calculation at each time and 
+!     8.  If this is a subgrid run
+!         - Read subgrid information
+!         - Set up subgrid data structures
+!
+!     9. Perform convolution calculation at each time and 
 !        Output concentration information
 !
 ***********************************************************************
 
       use comunits
+      use comparttr_sg, only : if_subgrid
       implicit none
       real*8 run_seconds1, run_seconds2
 
@@ -119,7 +125,14 @@ c**************** Executable statements begin***********
 
       call read_output_info()
 
-!     8. Perform convolution calculation at each time and output 
+!     8. Read subgrid information and Set up subgrid data structures
+
+      if (if_subgrid .eq. 1) then
+         call read_subgrid_info()
+         call subgrid_driver()
+      end if
+
+!     9. Perform convolution calculation at each time and output 
 !        concentration information
 
       call perform_calculations()

@@ -96,12 +96,15 @@
 !
 !***********************************************************************
 
-      use comgrid, only : n_grid_points
-      use comparttr, only : cell_path, cell_packed, n_packed,
-     2 n_touched_cells, touched_cells, concentration, cfavg
-      use comsim, only : total_time, n_out_times, out_string,
-     2     ntimes, delta_time, out_times, noutnodes, ioutnode,
-     3     out_cell, conc_string, nfavgzones, index_favg, water_flux
+      use comgrid, only : n_grid_points, sx1
+      use comparttr, only : cell_path, cell_packed, n_packed, cfavg, 
+     2     n_touched_cells, touched_cells, concentration, conc_mobile,
+     3     conc_total, zone_vol
+      use comparttr_sg, only : if_subgrid
+      use comsim, only : total_time, n_out_times, out_string, ntimes,
+     2     delta_time, out_times, noutnodes, ioutnode, out_cell,
+     3     conc_string, nfavgzones, index_favg, water_flux, sparse,
+     4     alt_string, nodes_favg, prntvar
       use comunits, only : error_unit_number, sim_unit_number, 
      2     flux_unit_number
       implicit none
@@ -109,7 +112,11 @@
       integer i
       integer j
       integer inodes_favg
+      integer imsg(5), msg(5), nwds
+      real*8  xmsg(5)
       integer, allocatable :: nodes_favgtemp(:)
+      character*32  cmsg(4)
+      character*80 dummy_string
 
 !****************     Executable code starts here*******************
 
@@ -145,8 +152,10 @@
       allocate(touched_cells(n_touched_cells))
 !     ALLOCATE indexing array of concentrations
       allocate(concentration(n_touched_cells))
+      allocate(conc_mobile(n_touched_cells))
       touched_cells = 0
-      concentration = 0.
+      concentration = 0.d0
+      conc_mobile = 0.d0
 
 !     FOR each cell
       do i = 1, n_grid_points
@@ -161,11 +170,25 @@
 
 !     Determine if resident or flux-averaged concentration
 
+      alt_string = ''
       read(sim_unit_number,'(a4)') conc_string
       if(conc_string.ne.'favg') then
          conc_string = 'resc'
+         allocate(conc_total(n_touched_cells))
          backspace sim_unit_number
       else
+         read(sim_unit_number,'(a3)') alt_string
+         if (alt_string .ne. 'alt') then
+            backspace (sim_unit_number)
+            alt_string = ''
+         else
+!     Check if we are using SUBGRID, 'alt' not suported
+            if (if_subgrid .ne. 0) then
+               write(error_unit_number, 120)
+               write(error_unit_number, 110)
+               stop
+            end if
+         end if
          allocate(index_favg(n_grid_points))
          index_favg = 0
          if (flux_unit_number .ne. 0) then
@@ -173,6 +196,7 @@
             nfavgzones = n_grid_points
             allocate(water_flux(nfavgzones))
             allocate(cfavg(nfavgzones))
+            allocate(conc_total(nfavgzones))
             cfavg = 0.
             water_flux = 0.
             call read_flux_data
@@ -183,25 +207,40 @@
 !     READ in number of zones at which flux-averaged conc. is to be
 !        calculated
             read(sim_unit_number,*) nfavgzones
+!     If alt_string = 'alt' this is the number of nodes that will have output
 !     ALLOCATE arrays used in flux averaged concen. calculation
             allocate(water_flux(nfavgzones))
             allocate(cfavg(nfavgzones))
-            allocate(nodes_favgtemp(n_grid_points))
+            allocate(conc_total(nfavgzones))
+            allocate(zone_vol(nfavgzones))
             water_flux = 0.
             cfavg = 0.
-            nodes_favgtemp = 0
+            zone_vol = 0.
+            if (alt_string .ne. 'alt') then
+               allocate(nodes_favgtemp(n_grid_points))
+               nodes_favgtemp = 0
 !     READ in flux associated with each zone
-            read(sim_unit_number,*) (water_flux(j),j=1,nfavgzones)
+               read(sim_unit_number,*) (water_flux(j),j=1,nfavgzones)
 !     READ in nodes associated with each favg zone
-            do i = 1, nfavgzones
-               read(sim_unit_number,*) inodes_favg
-               read(sim_unit_number,*) (nodes_favgtemp(j),
-     &              j=1,inodes_favg)
-               do j = 1, inodes_favg
-                  index_favg(nodes_favgtemp(j)) = i
+               do i = 1, nfavgzones
+                  read(sim_unit_number,*) inodes_favg
+                  read(sim_unit_number,*) (nodes_favgtemp(j),
+     &                 j=1,inodes_favg)
+                  do j = 1, inodes_favg
+                     index_favg(nodes_favgtemp(j)) = i
+                     zone_vol(i) = zone_vol(i) + sx1(nodes_favgtemp(j))
+                  end do
                end do
-            end do
-            deallocate(nodes_favgtemp)
+               deallocate(nodes_favgtemp)
+            else
+!      READ nodes that will have output
+               allocate(nodes_favg(nfavgzones))
+               do i = 1, nfavgzones
+                  read(sim_unit_number,*) nodes_favg(i)
+                  index_favg(nodes_favg(i)) = i
+                  zone_vol(i) = sx1(nodes_favg(i))
+               end do
+            end if
          end if
       end if
 !     READ in the number of times at which output information is required
@@ -253,9 +292,44 @@
 
 !     READ flag to determine if full avs output file or compressed file
 !        is required
-      read(sim_unit_number,'(a4)') out_string
+      read(sim_unit_number,'(a80)') dummy_string
+      call parse_string(dummy_string, imsg, msg, xmsg, cmsg, nwds)
 
+      out_string = cmsg(1)
+c     Default is to only output mobile resident or flux averaged 
+c     concentration
+      prntvar = .false.
+      sparse = .false.
+     
+      if (nwds .gt. 1 .and. out_string(1:3) .eq. 'tec') then
+         do i = 2, nwds
+            if (msg(i) .eq. 3) then
+               select case (cmsg(i)(1:2))
+               case ('sp', 'SP')
+c     Sparse output (don't include node numbers in subsquent time output for tecplot)
+                  sparse = .true.
+               case ('to','TO')
+c     Output total resident concentration
+                  prntvar(1) = .true.
+               case ('fl', 'FL')
+c     Output fluxes at first time (tecplot)
+                  prntvar(1) = .true.
+               case ('mo','MO')
+c     Output total moles (mass) for each time step (tecplot)
+c                  prntvar(2) = .true.
+                  if (alt_string .ne. 'alt') prntvar(2) = .true.
+c     Total moles is undefined for the alternate flux output
+               end select
+            end if
+         end do
+      end if
+      
       if(out_string.eq.'node' .or. out_string.eq.'tecn') then
+         if (if_subgrid .ne. 0) then
+            write (error_unit_number, 100)
+            write (error_unit_number, 130)
+            stop
+         end if
          read(sim_unit_number,*) noutnodes
          allocate(ioutnode(noutnodes))
          read(sim_unit_number,*)(ioutnode(i),i=1,noutnodes)
@@ -270,11 +344,13 @@
 
       return
 
- 200  write(error_unit_number, 100) 
-      write(error_unit_number, 110) 
+ 200  write (error_unit_number, 100) 
+      write (error_unit_number, 110) 
       stop
  100  format ('ERROR - delta_time must be entered for ',
      &     'flux averaged concentrations')
  110  format ('STOPPING Execution')
+ 120  format ('ERROR - keyword "alt" cannot be used with SUBGRID')
+ 130  format ('ERROR - "node" output cannot be used with SUBGRID')
 
       end subroutine read_output_info

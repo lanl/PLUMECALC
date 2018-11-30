@@ -106,10 +106,15 @@
 !        (assumes contiguous particle numbering such that
 !         particle number for the first source goes from
 !         1 to Np1, next is Np1+1 to Np2, etc.)
-
-      do i = 1, n_sources-1
-         n_part_source(i) = start_no(i+1)-start_no(i)
-      end do
-      n_part_source(n_sources) = npart-start_no(n_sources)+1
+      if(dummy2 .eq. 'do') then
+         do i = 1, n_sources
+            n_part_source(i) = end_no(i)-start_no(i)+1
+         end do
+      else
+         do i = 1, n_sources-1
+            n_part_source(i) = start_no(i+1)-start_no(i)
+         end do
+         n_part_source(n_sources) = npart-start_no(n_sources)+1
+      end if
 
       end subroutine read_sim_info

@@ -75,6 +75,9 @@
 !        and rfac for retardation factors
       call inrock_plume
 
+!     CALL subroutine to apply velocity corrections if used
+      call velocity_correction
+
 !     CALL subroutine to read in sorption and matrix diffusion
 !        parameters
       call indiffusion

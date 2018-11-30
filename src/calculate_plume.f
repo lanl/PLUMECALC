@@ -44,13 +44,13 @@
 !***********************************************************************
 
       use comrock, only : ps, rfac, diffusion_model, itrc_diff,
-     2     matrix_por, use_matrix
+     2     matrix_por, use_matrix, use_fracture
       use comgrid, only : sx1
       use commdot, only : n_sources, time_mdot, mdot, end_no_mdot
-      use comparttr, only : start_no, npart, cell_index,
-     2     n_cells, time_packed, cell_packed, n_part_source,
-     3     concentration, cell_path, n_touched_cells, touched_cells,
-     4     kdecay, end_no, step_no, cmin
+      use comparttr, only : start_no, npart, cell_index, n_cells,
+     2     time_packed, cell_packed, n_part_source, concentration, 
+     3     cell_path, n_touched_cells, touched_cells, kdecay, end_no, 
+     4     step_no, cmin, adv_packed, conc_mobile, conc_total
       use comsim, only : out_cell
       implicit none
 
@@ -74,6 +74,8 @@
       real*8 result
       real*8 integrate_curve
       real*8 sxliter
+      real*8 mobile_ratio
+      real*8 ps_correct
 
 !****************Begin executable statements here ******************
 
@@ -101,6 +103,8 @@
             partloop: do j = jstart, jend
 
 !           IF time of calculation is less than exit time for the cell
+!               mobile_ratio = adv_packed(j) / (time_packed(j) - time_in)
+               mobile_ratio = adv_packed(j)
                if(current_time.gt.time_packed(j)) then
 !              Compute tau_out and tau_in
                   tau_out = current_time - time_packed(j)
@@ -116,6 +120,8 @@
 !              Divide by number of particles for this source
                      concentration(icell) = concentration(icell) +
      2                    result/n_part_source(isource)
+                     conc_mobile(icell) = conc_mobile(icell) +
+     2                    mobile_ratio * result/n_part_source(isource)
                   end if
                   time_in = time_packed(j)
 !           ELSE the stay in this cell straddles the time
@@ -134,7 +140,9 @@
 !              Divide by number of particles for this source
                      concentration(icell) = concentration(icell) +
      2                    result/n_part_source(isource)
-                  end if
+                     conc_mobile(icell) = conc_mobile(icell) +
+     2                    mobile_ratio * result/n_part_source(isource)
+                 end if
 !              exit loop for this particle
                   exit partloop
                end if
@@ -154,23 +162,40 @@
       do i = 1, n_touched_cells
          cellno = touched_cells(i)
 c s kelkar 11/20/06
-c change units of the cell voulme from m^3 to l so that the 
+c change units of the cell volume from m^3 to l so that the 
 c answer will be in moles/l instead of moles/m^3
          sxliter=sx1(cellno)*1000.
+         conc_total(i) = concentration(i)
 !     perform correction for porosity and cell size
-         if (diffusion_model .and. use_matrix) then
+         if (diffusion_model) then
             if (itrc_diff(i).ne.0) then
-               concentration(i) = concentration(i)/
-     2              (matrix_por(itrc_diff(i))*sxliter*rfac(cellno))
+               if (use_matrix) then
+                  ps_correct = matrix_por(itrc_diff(i))
+               else if (use_fracture) then
+                  ps_correct = ps(cellno)
+               else
+!     total porosity
+                  ps_correct = ps(cellno) + (1.0d0 - ps(cellno)) * 
+     2                 matrix_por(itrc_diff(i))
+               end if
             else
-               concentration(i) = concentration(i)/
-     2              (ps(cellno)*sxliter*rfac(cellno))
+               ps_correct = ps(cellno)
             end if
+            concentration(i) = concentration(i) / (ps(cellno)*sxliter)
+c     Retardation now handled with mobile ratio
+c            concentration(i) = concentration(i) /
+c     2           (ps_correct * sxliter * rfac(cellno))
          else
-            concentration(i) = concentration(i)/
-     2           (ps(cellno)*sxliter*rfac(cellno))
+            concentration(i) = concentration(i) / (ps(cellno)*sxliter)
+c            concentration(i) = concentration(i) /
+c     2           (ps(cellno)*sxliter*rfac(cellno))
          end if
+         conc_mobile(i) = conc_mobile(i) / (ps(cellno)*sxliter)
+c         conc_mobile(i) = conc_mobile(i) /
+c     2           (ps(cellno)*sxliter*rfac(cellno))
          if (concentration(i) .lt. cmin) concentration(i) = 0.
+         if (conc_mobile(i) .lt. cmin) conc_mobile(i) = 0.
+         if (conc_total(i) .lt. cmin) conc_total(i) = 0.
       end do
 !   ENDFOR each cell
 

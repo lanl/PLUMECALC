@@ -65,7 +65,7 @@
       integer open_file
       integer, allocatable :: header_lines(:)
       character*80 current_line
-      character*100 current_file
+      character*250 current_file
       real*8, allocatable :: xjunk(:)
 
 !*************Executable statements start here **************
@@ -75,7 +75,7 @@
       header_lines = 0
 !     FOR each source
       do i = 1, n_sources
-         read(sim_unit_number,'(a100)') current_file
+         read(sim_unit_number,'(a250)') current_file
 !        OPEN file
          current_unit_number = open_file(current_file, 1, 'OLD')
          done = .false.
@@ -117,7 +117,7 @@
       previous_start = 1
 !     FOR each Source
       do i = 1, n_sources
-         read(sim_unit_number,'(a100)') current_file
+         read(sim_unit_number,'(a250)') current_file
          current_unit_number = open_file(current_file, 1, 'OLD')
 !        FOR each point in time, mass flux curve
          do j = 1, header_lines(i)

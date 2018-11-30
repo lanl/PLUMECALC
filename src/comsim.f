@@ -71,15 +71,18 @@
       real*8 total_time
       real*8 n_out_times
       real*8 delta_time
+      character*3 alt_string
       character*4 out_string
       character*4 conc_string
       integer nfavgzones
       integer, allocatable :: index_favg(:)
+      integer, allocatable :: nodes_favg(:)
       real*8, allocatable :: water_flux(:)
       integer ntimes
       real*8, allocatable :: out_times(:)
       integer noutnodes
       integer, allocatable :: ioutnode(:)
       integer, allocatable :: out_cell(:)
+      logical :: sparse, prntvar(2)
 
       end module comsim

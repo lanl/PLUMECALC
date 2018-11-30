@@ -44,6 +44,11 @@
 !                                cell_packed array, array of size total 
 !                                sum of cells passed through for all 
 !                                particles
+!     adv_packed      real*8   array of delta times that the particle 
+!                               takes for the advective step across
+!                               the cell in the cell packed array,
+!                               array of size total sum of cells passed 
+!                               through for all particles
 !     x_packed        real*8   array of x coordinates where each particle 
 !                                enters the corresponding cell in the 
 !                                cell_packed array, array of size total 
@@ -75,9 +80,18 @@
 !     concentration   real*8   array of computed concentrations for the 
 !                                cells in the compact array, array of 
 !                                size n_touched_cells
+!     conc_mobile     real*8   array of computed mobile concentrations 
+!                                for the cells in the compact array, 
+!                                array of size n_touched_cells
+!     conc_total      real*8   array of computed total concentrations 
+!                                for the cells in the compact array, 
+!                                array of size n_touched_cells
 !     kdecay          real*8   1st order decay constant
 !     cfavg           real*8   computed outlet concentration from each 
 !                                flux averaged concentration zone, 
+!                                array of size nfavgzones
+!     zone_vol        real*8   computed zone volume for each flux
+!                                averaged concentration zone, 
 !                                array of size nfavgzones
 !     cmin            real*8   minimum output concentration parameter,
 !                                if the calculated concentration is less
@@ -97,6 +111,7 @@
       integer, allocatable :: n_cells(:)
       integer, allocatable :: cell_packed(:)
       real*8, allocatable :: time_packed(:)
+      real*8, allocatable :: adv_packed(:)
       real*8, allocatable :: x_packed(:)
       real*8, allocatable :: y_packed(:)
       real*8, allocatable :: z_packed(:)
@@ -105,6 +120,9 @@
       integer n_touched_cells
       integer, allocatable :: touched_cells(:)
       real*8, allocatable :: concentration(:)
+      real*8, allocatable :: conc_mobile(:)
+      real*8, allocatable :: conc_total(:)
+      real*8, allocatable :: zone_vol(:)
       real*8 kdecay
       real*8, allocatable :: cfavg(:)
       real*8 cmin

@@ -123,6 +123,7 @@ C***********************************************************************
       character*4 dummy4
       character*32  cmsg(7)
       real*8, allocatable :: kdp(:)
+      real*8, allocatable :: rpor(:)
       real*8 xmsg(7)
       character*80 wdd1
       
@@ -132,6 +133,7 @@ C***********************************************************************
       allocate(ps(n_grid_points))
       allocate(rfac(n_grid_points))
       allocate(vcf(n_grid_points))
+      allocate(rpor(n_grid_points))
 c**** read rock data ****
       itype(1) = 8
       itype(2) = 8
@@ -158,7 +160,7 @@ c**** read rock data ****
      2        n_grid_points, narrays, itype, 
      3        default, macroread, macro, igroup, ireturn,
      4        r8_1=denr(1:n_grid_points),r8_2=kdp(1:n_grid_points),
-     5        r8_3=ps(1:n_grid_points),r8_4=vcf(1:n_grid_points)) 
+     5        r8_3=ps(1:n_grid_points),r8_4=rpor(1:n_grid_points)) 
       else
          narrays = 3
          call initdata2 (rock_unit_number, error_unit_number,
@@ -168,10 +170,22 @@ c**** read rock data ****
      5        r8_3=ps(1:n_grid_points)) 
          vcf = default(4)
       end if
+! Velocity correction must be applied before the times are corrected
+! for retardation
+! For compatibility with previous versions, check to see if a scaling factor was entered instead of a reference porosity
       do i = 1,n_grid_points
-         rfac(i) = (1 + (denr(i) * kdp(i)) / (ps(i) * 1000.)) * vcf(i)
+!         rfac(i) = (1 + (denr(i) * kdp(i)) / (ps(i) * 1000.)) * vcf(i)
+         rfac(i) = (1 + (denr(i) * kdp(i)) / (ps(i) * 1000.))
+         if (nwds .eq. 7) then
+            if (rpor(i) .gt. 0. .and. rpor(i) .lt. 1.) then
+! A reference porosity was entered and the scaling factor will be computed
+               vcf(i) = ps(i) / rpor(i)
+            else
+               vcf(i) = rpor(i)
+            end if
+         end if
       end do
 
-      deallocate (kdp)
+      deallocate (kdp, rpor)
 
       end

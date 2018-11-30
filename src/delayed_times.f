@@ -37,7 +37,8 @@ c
 !     ENDIF corrections are needed
 !***********************************************************************
 
-      use comparttr, only : npart, n_cells, time_packed, cell_packed
+      use comparttr, only : npart, n_cells, time_packed, cell_packed,
+     2     adv_packed
       use comgrid, only : n_grid_points
       use comrock, only : rfac, vcf, itrc_diff, sigma_partial, 
      2     omega_partial, rd_frac, rseed, diffusion_model
@@ -49,8 +50,10 @@ c
       integer istart
       integer iend
       real*8 time_current
+      real*8 time_updated_previous
       real*8 time_original_previous
       real*8 delta_time
+      real*8 delta_delay_time
       real*8 par3v
       integer tflag
       integer fm
@@ -64,36 +67,41 @@ c
 c***************** Begin executable statements here**********
 
       corrections = .false.
+!     The adv_packed array contains the mobile ratio, defined as the 
+!     delta time it takes for advection divided by total delta time
+!     Initialize the advected mobile ratio to 1.
+      adv_packed = 1.0d0
 
 !     FOR each cell
       check_loop: do i = 1, n_grid_points
-!        IF the cell has particle delay
+!     IF the cell has particle delay
          if(rfac(i).ne.1..or.diffusion_model) then
-!           Set flag to denote corrections needed
+!     Set flag to denote corrections needed
             corrections = .true.
-!           Exit loop over each cell
+!     Exit loop over each cell
             exit check_loop
          end if
-!        ENDIF the cell has particle delay
+!     ENDIF the cell has particle delay
       end do check_loop
 !     ENDFOR each cell
 
 !     IF corrections are needed
-      if(corrections) then
+      if (corrections) then
 
          istart = 1
 !        FOR each particle
          do i = 1, npart
             iend = istart + n_cells(i)-1
             time_current = 0.
+            time_updated_previous = 0.
             time_original_previous = 0.
 !           FOR each segment of its travel path
             do j = istart, iend
 !     Distinguish between a model with matrix diffusion and simple
 !     sorption in a continuum
-!              Compute new exit time from this cell
-               delta_time = (time_packed(j)-time_original_previous) *
-     &              86400.
+!     Compute new exit time from this cell
+               adv_packed(j) = time_packed(j) - time_original_previous
+               delta_time = adv_packed(j) * 86400.
                if(itrc_diff(cell_packed(j)).ne.0 .and. 
      &              delta_time .gt. 0) then
                   if(sigma_partial(cell_packed(j)).lt.0.) then
@@ -103,18 +111,13 @@ c***************** Begin executable statements here**********
                      sigma=sigma_partial(cell_packed(j))/
      2                    sqrt(delta_time)
                      omega=omega_partial(cell_packed(j))*
-     2                 sqrt(delta_time)
+     2                    sqrt(delta_time)
                   end if
-!                  call time_delay(tflag,sigma,omega,
-!     2                 rd_frac(itrc_diff(cell_packed(j))),rseed, 
-!     3                 delta_time, conc_ret,time_diffused)
                   par3v = 1.0
                   fm = 1
-                  rf_corr = rd_frac(itrc_diff(cell_packed(j))) * 
-     2                 vcf(cell_packed(j))
                   call time_delay(tflag,1,cell_packed(j),sigma,omega,
-     2                 par3v,fm,rf_corr,rseed,
-     3                 delta_time, conc_ret,time_diffused)           
+     2                 par3v,fm,rd_frac(itrc_diff(cell_packed(j))),
+     3                 rseed,delta_time, conc_ret,time_diffused) 
                   time_current = time_current + 
      2                 time_diffused
                else
@@ -122,6 +125,15 @@ c***************** Begin executable statements here**********
      2                 rfac(cell_packed(j))*delta_time
                end if
                time_original_previous = time_packed(j)
+               delta_delay_time = (time_current - time_updated_previous)
+     2              / 86400. 
+               if (delta_delay_time .gt. 0.) then
+                  adv_packed(j) = adv_packed(j) / delta_delay_time
+                  adv_packed(j) = min(adv_packed(j), 1.d0)
+               else
+                  adv_packed(j) = 1.d0
+               end if
+               time_updated_previous = time_current
                time_packed(j) = time_current / 86400.
             end do
 !           ENDFOR each segment of its travel path

@@ -61,9 +61,10 @@
       real*8, allocatable :: matrix_por(:)
       real*8, allocatable :: spacing_primary(:)
       real*8, allocatable :: spacing_secondary(:)
-      integer ndiffmodels
-      integer rseed
-      logical diffusion_model
-      logical use_matrix
+      integer :: ndiffmodels
+      integer :: rseed
+      logical :: diffusion_model
+      logical :: use_matrix = .false.
+      logical :: use_fracture = .false.
 
       end module comrock

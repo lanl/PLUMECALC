@@ -42,11 +42,15 @@
 !   ENDFOR each cell
 !***********************************************************************
 
+      use comgrid, only : sx1
       use commdot, only : n_sources, time_mdot, mdot, end_no_mdot
       use comparttr, only : start_no, npart, cell_index,
      2     n_cells, time_packed, cell_packed, n_part_source,
-     3     cell_path, kdecay, end_no, step_no, cfavg, cmin
-      use comsim, only : nfavgzones, index_favg, water_flux
+     3     cell_path, kdecay, end_no, step_no, cfavg, cmin,
+     4     conc_total, zone_vol
+      use comrock, only : itrc_diff, matrix_por, ps
+      use comsim, only : nfavgzones, index_favg, water_flux, alt_string
+      use comunits, only : error_unit_number, flux_unit_number
       implicit none
 
       integer isource
@@ -67,7 +71,11 @@
       real*8 result
       real*8 integrate_curve
       real*8 kdecayeq0
+      real*8 ps_total
+      logical :: warning = .false.
       parameter(kdecayeq0=0.)
+
+      save warning
 
 !****************Begin executable statements here ******************
 
@@ -136,11 +144,36 @@
 !   FOR each favg zone
       do i = 1, nfavgzones
 !     perform correction for flow rate from the zone
-         if (water_flux(i) .ne. 0.) cfavg(i) = cfavg(i)/
-     2        (water_flux(i)*(current_time-previous_time))
-         if (cfavg(i) .lt. cmin) cfavg(i) = 0.
+         if (water_flux(i) .ne. 0.) then
+            cfavg(i) = cfavg(i)/
+     2           (water_flux(i)*(current_time-previous_time))
+            if (cfavg(i) .lt. cmin) cfavg(i) = 0.
+         else
+            if (alt_string .ne. 'alt') then
+               if (cfavg(i) .gt. 0.) then
+                  if (.not. warning) write (error_unit_number, 9)
+                  cfavg(i) = -1. * cfavg(i)
+               end if
+            end if
+         end if
+         if (itrc_diff(i).ne.0) then
+            ps_total = ps(i) + (1.0d0 - ps(i)) * 
+     2           matrix_por(itrc_diff(i))
+         else
+            ps_total = ps(i)
+         end if
+         if (flux_unit_number .ne. 0) then
+            conc_total(i) = cfavg(i) * sx1(i) * ps_total * 1000.
+         else if (alt_string .eq. 'alt') then
+c This value is really undefined for the alternate output
+c the following is just a place holder
+            conc_total(i) = cfavg(i)
+         else
+            conc_total(i) = cfavg(i) * zone_vol(i) * ps_total * 1000.
+         end if
       end do
 !   ENDFOR each favg zone
-
+ 9    format ('Flux of 0. found for cell with solute',
+     &     'output will be negative total moles')
       return
       end subroutine calculate_favg

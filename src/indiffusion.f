@@ -41,21 +41,23 @@
 
 c     Read until 'diff' is found or end of file reached
       done = .false.
-      diffusion_model = .false.
       allocate(itrc_diff(n_grid_points))
       itrc_diff = 0
-
 
       do while(.not.done)
          read(rock_unit_number,'(a80)',end=9000) wdd1
          if(wdd1(1:4).eq.'diff') then
             done = .true.
             diffusion_model = .true.
-            use_matrix = .false.
             call parse_string(wdd1, imsg, msg, xmsg, cmsg, nwds)
             if (nwds .eq. 2) then
                if (cmsg(2) .eq. 'matrix') then
                   use_matrix = .true.
+               else if (cmsg(2) .eq. 'fracture') then
+                  use_fracture = .true.
+               else
+c     The default will be to use the total porosity
+c     phi_total = phi_fracture + (1 - phi_fracture) * phi_matrix
                end if
             end if
          end if
@@ -183,7 +185,9 @@ c     Set sigma and omega parameters for diffusion model
             denominator = 1000.*matrix_por(itrc_diff(i))
             denominator = max(1.d-30, denominator)
             rprime = 1.+kd(itrc_diff(i))*denr(i)/denominator
-            sprime = spacing_primary(itrc_diff(i))/vcf(i)
+c Velocity corrections are done prior to computing any delays
+c            sprime = spacing_primary(itrc_diff(i))/vcf(i)
+            sprime = spacing_primary(itrc_diff(i))
             if (temp_flag) then
 c     Apply temperature correction to diffusion
                if (iform .eq. 0) then

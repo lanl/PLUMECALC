@@ -1,7 +1,5 @@
       module comunits
 !***********************************************************************
-! $Id: comunits.f,v 1.1 2006/05/17 15:23:20 zvd Exp $
-!***********************************************************************
 !  Copyright, 2002, 2004,  The  Regents of the University of California.
 !  This  program  was  prepared by  the  Regents  of the  University  of
 !  California  at Los Alamos National Laboratory (the  University) under
@@ -24,6 +22,8 @@
 !                                   containing the cell volumes
 !     sptr_unit_number   integer  Unit number for the sptr file for the
 !                                   simulation
+!     sptr_corn_unit_number   integer  Unit number for the sptr file for the
+!                                   simulation
 !     rock_unit_number   integer  Unit number of the file containing 
 !                                   the modified rock macro used for 
 !                                   the simulation
@@ -45,9 +45,13 @@
       integer output_unit_number 
       integer tcurve_unit_number
       integer flux_unit_number
+      integer sptr_corn_unit_number
+      integer sptr_corn_file_type
       integer sptr_num
       integer, allocatable :: sptr_unit_number(:)
       
       logical, allocatable :: sptr_bin(:)
+
+      logical flag_avs
 
       end module comunits

@@ -1,6 +1,6 @@
       subroutine read_sptr_info()
 !***********************************************************************
-! $Id: read_sptr_info.f,v 1.2 2007/02/14 20:43:21 zvd Exp $
+! $Id: read_sptr_info.f,v 1.1 2006/05/17 15:23:25 zvd Exp $
 !***********************************************************************
 !  Copyright, 2002, 2004,  The  Regents of the University of California.
 !  This  program  was  prepared by  the  Regents  of the  University  of
@@ -68,6 +68,7 @@
 
       use comunits
       use comparttr
+      use comparttr_sg, only : if_subgrid
       implicit none
 
       logical done, new_format
@@ -75,7 +76,6 @@
       integer partno
       integer cellno
       integer i, j, k
-      integer :: if_subgrid = 0
       real*8 tdummy, xdummy, ydummy, zdummy
       character*30 verno
       character*11 jdate
@@ -122,6 +122,11 @@
      &           backspace (sptr_unit_number(j))
          end if
          npart = npart + num_part(j)
+         if (if_subgrid .eq. 1 .and. char3 .ne. 'XYZ') then
+            write (error_unit_number,*) 'Program stopped, ',
+     &           'XYZ data not found in sptr2 file:', j
+            stop
+         end if
       end do
 
 !     ALLOCATE array of number of cells for each particle
@@ -187,6 +192,7 @@
       allocate(cell_packed(n_packed))
 !     ALLOCATE packed array to store time information for each particle
       allocate(time_packed(n_packed))
+      allocate(adv_packed(n_packed))
       if (char3 .eq. 'XYZ') then
          allocate(x_packed(n_packed))
          allocate(y_packed(n_packed))
@@ -215,7 +221,8 @@
             read(sptr_unit_number(j),'(a4)') dummy_string
             read(sptr_unit_number(j),'(a4)') dummy_string
             read(sptr_unit_number(j),'(a4)') dummy_string
-            read(sptr_unit_number(j),'(a4)') dummy_string
+            if (char3 .eq. 'XYZ' .or. char3 .eq. 'Par') 
+     &           read(sptr_unit_number(j),'(a4)') dummy_string
          end if
 
          if(sptr_bin(j)) then

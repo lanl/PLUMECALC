@@ -1,0 +1,63 @@
+# DO NOT DELETE THIS LINE - used by make depend
+allocmem_subgrid.o: comgrid_sg.o comparttr.o comparttr_sg.o comunits.o
+boundary_planes.o: comparttr_sg.o comunits.o
+calculate_favg.o: comgrid.o commdot.o comparttr.o comrock.o comsim.o comunits.o
+calculate_plume.o: comgrid.o commdot.o comparttr.o comrock.o comsim.o
+cell_setup.o: comparttr.o comparttr_sg.o
+compute_nxyz.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o comunits.o
+delayed_times.o: comgrid.o comparttr.o comrock.o
+fill_id_parent_sg.o: comgrid.o comgrid_sg.o comparttr_sg.o comunits.o
+fill_ip_cell_to_cell_sg.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o
+fill_ip_cell_to_cell_sg.o: comunits.o
+fill_ip_touched_cells.o: comgrid.o comparttr.o comparttr_sg.o comunits.o
+fill_ip_touched_cells_sg.o: comparttr.o comparttr_sg.o
+fill_touched_cells_sg.o: comgrid_sg.o comparttr.o comparttr_sg.o
+fill_xyz_sg.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o
+find_closest_curve.o: compfrac.o comunits.o
+ftime.o: compfrac.o
+global_local.o: comparttr_sg.o comunits.o
+global_node_id.o: comparttr.o comparttr_sg.o
+indiffusion.o: comgrid.o comki.o comrock.o comunits.o
+initdata2.o: comgrid.o comunits.o
+initialize_sg.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o comunits.o
+inrock_plume.o: comgrid.o comki.o comrock.o comunits.o
+interp.o: compfrac.o
+line_plane_t.o: comparttr_sg.o comunits.o
+local_global.o: comparttr_sg.o comunits.o
+march_particles.o: comparttr.o comparttr_sg.o comunits.o
+near3.o: comgrid.o
+next_cell_ijk.o: comparttr_sg.o
+open_file.o: comunits.o
+output_results.o: comgrid.o comparttr.o comparttr_sg.o comsim.o comunits.o
+parametric_line.o: comunits.o
+particle_setup.o: comparttr.o comparttr_sg.o
+path_arrays_sg.o: comparttr.o comparttr_sg.o
+perform_calculations.o: comparttr.o comsim.o
+plumecalc.o: comparttr_sg.o comunits.o
+read_file_info.o: comgrid.o comparttr_sg.o comunits.o
+read_flux_data.o: comgrid.o comsim.o comunits.o
+read_grid_info.o: comgrid.o comunits.o
+read_mdot_info.o: commdot.o comunits.o
+read_output_info.o: comgrid.o comparttr.o comparttr_sg.o comsim.o comunits.o
+read_rock_info.o: comgrid.o comunits.o
+read_sim_info.o: comgrid.o commdot.o comparttr.o comunits.o
+read_sptr_corn_dxyz_info.o: comgrid.o comparttr_sg.o comunits.o
+read_sptr_info.o: comparttr.o comparttr_sg.o comunits.o
+read_subgrid_info.o: comparttr.o comparttr_sg.o comunits.o
+read_tcurve.o: comgrid.o compfrac.o
+resize_packed_sg.o: comparttr.o comparttr_sg.o comunits.o realloc_mod.o
+sg_ijk_to_global_cell.o: comparttr_sg.o
+sg_ijk_to_sg_cell.o: comparttr_sg.o
+sorbed_times.o: comgrid.o comparttr.o comrock.o
+subgrid_driver.o: comparttr.o comparttr_sg.o comsim.o comunits.o
+time_delay.o: compfrac.o comunits.o
+variable_packed_update.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o
+variable_update.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o comrock.o
+variable_update.o: comsim.o
+vector_to_sg_vector.o: comgrid.o comgrid_sg.o comparttr_sg.o
+velocity_correction.o: comgrid.o comparttr.o comrock.o
+water_flux_interpolate_sg.o: comgrid.o comparttr.o comparttr_sg.o comrock.o
+water_flux_interpolate_sg.o: comsim.o
+write_particle_tracks_avs.o: comparttr.o comparttr_sg.o
+xyz_ijk.o: comunits.o
+zone_nnum.o: comgrid.o comunits.o

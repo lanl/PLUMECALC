@@ -70,7 +70,7 @@ c
 
       use comsim, only : ntimes, out_times, conc_string, delta_time
       use comparttr, only : concentration, time_packed, cell_packed,
-     2     n_packed, cfavg
+     2     n_packed, cfavg, conc_mobile, conc_total
       implicit none
 
       integer i
@@ -84,6 +84,7 @@ c*****************     Executable statements begin here
 !     FOR each time at which a calculation is being performed
       do i = 1, ntimes
 !        calculate concentration at this time
+         conc_total = 0.
          if(conc_string .eq. 'favg') then
             cfavg = 0.
             current_time = out_times(i)
@@ -95,6 +96,7 @@ c*****************     Executable statements begin here
             previous_time = current_time
          else
             concentration = 0.
+            conc_mobile = 0.
             current_time = out_times(i)
             call calculate_plume(current_time)
          end if
