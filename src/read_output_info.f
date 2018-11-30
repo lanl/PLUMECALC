@@ -173,23 +173,26 @@
 
       alt_string = ''
       read(sim_unit_number,'(a4)') conc_string
-      if(conc_string.ne.'favg') then
+      if(conc_string.ne.'favg' .and. conc_string .ne. 'mflx') then
          conc_string = 'resc'
          allocate(conc_total(n_touched_cells))
          allocate(conc_mobtot(n_touched_cells))
          backspace sim_unit_number
       else
-         read(sim_unit_number,'(a3)') alt_string
-         if (alt_string .ne. 'alt') then
-            backspace (sim_unit_number)
-            alt_string = ''
+         if (conc_string .eq. 'mflx') then
+            alt_string = 'alt'
          else
-!     Check if we are using SUBGRID, 'alt' not suported
-            if (if_subgrid .ne. 0) then
-               write(error_unit_number, 120)
-               write(error_unit_number, 110)
-               stop
+            read(sim_unit_number,'(a3)') alt_string
+            if (alt_string .ne. 'alt') then
+               backspace (sim_unit_number)
+               alt_string = ''
             end if
+         end if
+!     Check if we are using SUBGRID, 'mflx' (alt) option not suported
+         if (if_subgrid .ne. 0 .and. alt_string .eq. 'alt') then
+            write(error_unit_number, 120)
+            write(error_unit_number, 110)
+            stop
          end if
          allocate(index_favg(n_grid_points))
          index_favg = 0
@@ -237,8 +240,8 @@
             else
 !      READ nodes that will have output
                allocate(nodes_favg(nfavgzones))
+               read(sim_unit_number,*) (nodes_favg(i), i = 1,nfavgzones)
                do i = 1, nfavgzones
-                  read(sim_unit_number,*) nodes_favg(i)
                   index_favg(nodes_favg(i)) = i
                   zone_vol(i) = sx1(nodes_favg(i))
                end do
@@ -300,8 +303,6 @@
       out_string = cmsg(1)
 c     Default is to only output mobile resident or flux averaged 
 c     concentration
-      prntvar = .false.
-      sparse = .false.
      
       if (nwds .gt. 1 .and. out_string(1:3) .eq. 'tec') then
          do i = 2, nwds
@@ -310,34 +311,48 @@ c     concentration
                case ('sp', 'SP')
 c     Sparse output (don't include node numbers in subsquent time output for tecplot)
                   sparse = .true.
-               case ('to','TO')
-c     Output total resident concentration
-                  prntvar(1) = .true.
+               case ('to','TO','To')
+                  if (cmsg(i) .eq. 'total' .or. cmsg(i) .eq. 'TOTAL'
+     &                 .or. cmsg(i) .eq. 'Total_Concentration') then
+c     Output total resident concentration for each node
+                     prntvar(1) = .true.
+                  else if (cmsg(i) .eq. 'Total_Cell_Mass') then
+c     Output total mass (moles) for each node
+                     if (alt_string .ne. 'alt') prntvar(2) = .true.
+                     prntvar(4) = .true.
+                  end if
                case ('fl', 'FL')
 c     Output fluxes at first time (tecplot)
                   prntvar(1) = .true.
-               case ('mo','MO')
-c     Output total moles (mass) for each time step (tecplot)
-                  if (alt_string .ne. 'alt') prntvar(2) = .true.
-c     Total moles is undefined for the alternate flux output
+               case ('mo','MO','ma','MA', 'Mo')
+c     Output cumulative mass and integrated source 
+                  prntvar(4) = .true.
+                  if (cmsg(i)(2:2) .eq. 'o' .or. cmsg(i)(2:2) .eq. 'O')
+     2                 then
+                     if (alt_string .ne. 'alt') prntvar(2) = .true.
+c     Total moles is undefined for the mflx (alternate flux) output
 c     Output total mobile moles, too
-                  if (cmsg(i)(3:3) .eq. 'b' .or. cmsg(i)(3:3) .eq. 'B')
-     2                 prntvar(3) = .true.
-c     Check to see if a file has been designated for the results of the
-c     source term integration
-                  read(sim_unit_number,'(a80)') dummy_string
-                  if (dummy_string(1:4) .eq. 'file') then
-                     read(sim_unit_number,'(a80)') mdot_out_file
-                  else
-                     backspace (sim_unit_number)
-                     mdot_out_file = 'mdot_integral.dat'
+                     if (cmsg(i)(3:3) .eq. 'b' .or. cmsg(i)(3:3) .eq.
+     2                  'B') prntvar(3) = .true.
                   end if
+                  prntvar(4) = .true.
                end select
             end if
          end do
+         if (prntvar(4)) then
+c     Check to see if a file has been designated for the results of the
+c     source term integration
+            mdot_out_file = 'mdot_integral.dat'
+            read(sim_unit_number,'(a80)', end=10, err=10) dummy_string
+            if (dummy_string(1:4) .eq. 'file') then
+               read(sim_unit_number,'(a80)') mdot_out_file
+            else
+               backspace (sim_unit_number)
+            end if
+         end if
       end if
       
-      if(out_string.eq.'node' .or. out_string.eq.'tecn') then
+ 10   if(out_string.eq.'node' .or. out_string.eq.'tecn') then
          if (if_subgrid .ne. 0) then
             write (error_unit_number, 100)
             write (error_unit_number, 130)
@@ -363,7 +378,7 @@ c     source term integration
  100  format ('ERROR - delta_time must be entered for ',
      &     'flux averaged concentrations')
  110  format ('STOPPING Execution')
- 120  format ('ERROR - keyword "alt" cannot be used with SUBGRID')
+ 120  format ('ERROR - keyword "mflx" cannot be used with SUBGRID')
  130  format ('ERROR - "node" output cannot be used with SUBGRID')
 
       end subroutine read_output_info

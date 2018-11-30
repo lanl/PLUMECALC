@@ -109,10 +109,14 @@ c     code accounts for that
          curve_structure = 0
          read (tcunit, *) nump1
          allocate (param1 (nump1))
-         read (tcunit,*) (param1(i), i= 1, nump1) 
+         read (tcunit,*) (param1(i), i= 1, nump1)
+         sigma_low = param1(nump1)
+         sigma_high = param1(1)
          read (tcunit, *) nump2
          allocate (param2 (nump2))
          read (tcunit, *) (param2(i), i= 1, nump2)
+         omega_low = param2(nump2)
+         omega_high = param2(1)
          if (numparams .gt. 2) then
             read (tcunit, *) nump3
             allocate (param3 (nump3))

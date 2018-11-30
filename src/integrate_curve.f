@@ -54,6 +54,9 @@
       real*8 beta
       real*8 term1
       real*8 term2
+      real*8 term3
+      real*8 exp1
+      real*8 exp2
       
       integer i
       integer ilower
@@ -61,6 +64,8 @@
       real*8 ylower
       real*8 yupper
       real*8 tau
+      real*8 epsilon_decay
+      parameter (epsilon_decay = 1.d-7)
 
 c****************Begin executable statements here ******************
 
@@ -89,19 +94,33 @@ c****************Begin executable statements here ******************
             yupper = y(i-1)+(y(i)-y(i-1))*(upper-x(i-1))/(x(i)-x(i-1))
 !           Add to integrated result this contribution
             if(upper-xlower.gt.1.e-10) then
-               if(kdecay.eq.0.) then
+               if(kdecay.lt.epsilon_decay) then
                   beta = (yupper-ylower)/(upper-xlower)
                   alpha = ylower-beta*xlower
-                  integrate_curve = integrate_curve +
-     2                 alpha*(upper-xlower)+
-     3                 0.5*beta*(upper**2-xlower**2)
+                  if (kdecay .eq. 0) then
+                     integrate_curve = integrate_curve +
+     2                    alpha*(upper-xlower)+
+     3                    0.5*beta*(upper**2-xlower**2)
+                  else
+                     integrate_curve = integrate_curve +
+     2                    (alpha*(upper-xlower)+
+     3                    0.5*beta*(upper**2-xlower**2)) *
+     4                    exp(-kdecay*(tau - (upper+xlower)/2))
+                  end if
                else
                   beta = (yupper-ylower)/(upper-xlower)
-                  term1 = (yupper-beta/kdecay)/kdecay
-                  term2 = (ylower-beta/kdecay)/kdecay
-                  integrate_curve = integrate_curve +
-     2                 term1*exp(-kdecay*(tau-upper))-
-     2                 term2*exp(-kdecay*(tau-xlower))
+c                  term1 = (yupper-beta/kdecay)/kdecay
+c                  term2 = (ylower-beta/kdecay)/kdecay
+                  exp1 = exp(-kdecay*(tau-upper))
+                  exp2 = exp(-kdecay*(tau-xlower))
+                  term1 = yupper * exp1
+                  term2 = ylower * exp2
+                  term3 = beta/kdecay * (exp1 - exp2)
+c                  integrate_curve = integrate_curve +
+c     2                 term1*exp(-kdecay*(tau-upper))-
+c     2                 term2*exp(-kdecay*(tau-xlower))
+                  integrate_curve = integrate_curve + (term1 - term2 -
+     2                 term3) / kdecay
                end if
             end if
 !           EXIT loop for each x in curve
@@ -110,19 +129,33 @@ c****************Begin executable statements here ******************
          else
 !           Add to integrated result this contribution
             if(x(i)-xlower.gt.1.e-10) then
-               if(kdecay.eq.0.) then
+               if(kdecay.lt.epsilon_decay) then
                   beta = (y(i)-ylower)/(x(i)-xlower)
                   alpha = ylower-beta*xlower
-                  integrate_curve = integrate_curve +
-     2                 alpha*(x(i)-xlower)+
-     2                 0.5*beta*(x(i)**2-xlower**2)
+                  if (kdecay .eq. 0.) then
+                     integrate_curve = integrate_curve +
+     2                    alpha*(x(i)-xlower)+
+     2                    0.5*beta*(x(i)**2-xlower**2)
+                  else
+                     integrate_curve = integrate_curve +
+     2                    (alpha*(x(i)-xlower)+
+     3                    0.5*beta*(x(i)**2-xlower**2)) *
+     4                    exp(-kdecay*(tau - (x(i)+xlower)/2))
+                  end if
                else
                   beta = (y(i)-ylower)/(x(i)-xlower)
-                  term1 = (y(i)-beta/kdecay)/kdecay
-                  term2 = (ylower-beta/kdecay)/kdecay
-                  integrate_curve = integrate_curve +
-     2                 term1*exp(-kdecay*(tau-x(i)))-
-     2                 term2*exp(-kdecay*(tau-xlower))
+c                  term1 = (y(i)-beta/kdecay)/kdecay
+c                  term2 = (ylower-beta/kdecay)/kdecay
+                  exp1 = exp(-kdecay*(tau-x(i)))
+                  exp2 = exp(-kdecay*(tau-xlower))
+                  term1 = y(i) * exp1
+                  term2 = ylower * exp2
+                  term3 = beta/kdecay * (exp1 - exp2)
+c                  integrate_curve = integrate_curve +
+c     2                 term1*exp(-kdecay*(tau-x(i)))-
+c     2                 term2*exp(-kdecay*(tau-xlower))
+                  integrate_curve = integrate_curve + (term1 - term2 -
+     2                 term3) / kdecay
                end if
             end if
             xlower = x(i)

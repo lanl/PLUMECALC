@@ -5,7 +5,7 @@ calculate_favg.o: comgrid.o commdot.o comparttr.o comrock.o comsim.o comunits.o
 calculate_plume.o: comgrid.o commdot.o comparttr.o comrock.o comsim.o
 cell_setup.o: comparttr.o comparttr_sg.o
 compute_nxyz.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o comunits.o
-delayed_times.o: comgrid.o comparttr.o comrock.o
+delayed_times.o: comgrid.o comparttr.o compfrac.o comrock.o comsim.o comunits.o
 fill_id_parent_sg.o: comgrid.o comgrid_sg.o comparttr_sg.o comunits.o
 fill_ip_cell_to_cell_sg.o: comgrid.o comgrid_sg.o comparttr.o comparttr_sg.o
 fill_ip_cell_to_cell_sg.o: comunits.o
@@ -42,7 +42,7 @@ read_grid_info.o: comgrid.o comunits.o
 read_mdot_info.o: commdot.o comunits.o
 read_output_info.o: comgrid.o commdot.o comparttr.o comparttr_sg.o comsim.o
 read_output_info.o: comunits.o
-read_rock_info.o: comgrid.o comunits.o
+read_rock_info.o: comgrid.o comparttr_sg.o comunits.o
 read_sim_info.o: comgrid.o commdot.o comparttr.o comunits.o
 read_sptr_corn_dxyz_info.o: comgrid.o comparttr_sg.o comunits.o
 read_sptr_info.o: comparttr.o comparttr_sg.o comunits.o

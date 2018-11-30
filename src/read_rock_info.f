@@ -48,6 +48,7 @@
 
       use comgrid, only : n_grid_points, izonef
       use comunits
+      use comparttr_sg, only : if_subgrid
       implicit none
       character*4 dummy_string
       
@@ -88,7 +89,11 @@
       end if
 
 !     CALL routine to correct particle times for sorption or diffusion
-      call delayed_times
+!     For subgridding this will be called after the cells have been 
+!     subgridded
+      if (if_subgrid .ne. 1) then
+         call delayed_times
+      end if
 
 !     CLOSE rock property file
       close (rock_unit_number)

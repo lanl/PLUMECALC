@@ -96,8 +96,9 @@
          arraylen = iarrayend-iarraystart+1
 ! Integrate source function to detrmine solute that entered in 
 ! this time interval
-         if (prntvar(2))
-     2        call mdot_integral(current_time, iarraystart, iarrayend)
+         if (prntvar(4))
+     2        call mdot_integral(current_time, isource, iarraystart, 
+     3        iarrayend)
 
 !      FOR each particle in this source
          do i = istart, iend, istep

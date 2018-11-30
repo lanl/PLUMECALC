@@ -85,7 +85,7 @@ c*****************     Executable statements begin here
       do i = 1, ntimes
 !        calculate concentration at this time
          conc_total = 0.
-         if(conc_string .eq. 'favg') then
+         if(conc_string .eq. 'favg' .or. conc_string .eq. 'mflx') then
             cfavg = 0.
             current_time = out_times(i)
             if (delta_time .gt. 0.) then

@@ -50,15 +50,16 @@
       implicit none
 
       integer i, indx, len
-      real*8 current_time, cum_moles, cum_mobile
-      character*50 formstring
-      character*120 data_string
+      real*8 current_time, cum_moles, cum_mobile, mdot_undecayed
+      real*8 :: cum_produced = 0.
+      character*80 formstring
+      character*140 data_string
       logical first, alt
-      save formstring
+      save formstring, cum_produced
 
 c****************Begin executable statements here ******************
 
-      if(conc_string(1:3).eq.'fav') then
+      if(conc_string(1:3).eq.'fav' .or. conc_string(1:3).eq.'mfl') then
 c     Output flux averaged concentrations
          if (flux_unit_number .ne. 0 .or. alt_string .eq. 'alt') then
             if (out_string(1:3) .eq. 'tec') then
@@ -111,12 +112,12 @@ c     Output flux averaged concentrations
                         len = len_trim(data_string)
                         if (prntvar(1)) then
                            len = len_trim(data_string)
-                           write(data_string(len + 1 : 120), 86) 
+                           write(data_string(len + 1 : 140), 86) 
      &                          water_flux(touched_cells(i))
                         end if
                         if (prntvar(2)) then
                            len = len_trim(data_string)
-                           write(data_string(len + 1 : 120), 86) 
+                           write(data_string(len + 1 : 140), 86) 
      &                          conc_total(touched_cells(i))
                         end if
                         write(output_unit_number, 87) 
@@ -140,7 +141,7 @@ c     Output flux averaged concentrations
      &                       cfavg(indx)
                         if (prntvar(2)) then
                            len = len_trim(data_string)
-                           write(data_string(len + 1 : 120), 86) 
+                           write(data_string(len + 1 : 140), 86) 
      &                          conc_total(indx)
                         end if
                         write(output_unit_number, 87) 
@@ -189,11 +190,11 @@ c     Output flux averaged concentrations
                           end if
                        end if
                        len = len_trim (data_string)
-                       write (data_string(len + 1 : 120), 86)
+                       write (data_string(len + 1 : 140), 86)
      &                      cfavg(touched_cells(i))
                        if (prntvar(2)) then
                           len = len_trim (data_string)
-                          write(data_string(len + 1 : 120), 86)
+                          write(data_string(len + 1 : 140), 86)
      &                         conc_total(touched_cells(i))  
                        end if
                        write(output_unit_number, 87) trim(data_string)
@@ -207,11 +208,11 @@ c     Output flux averaged concentrations
      &                      nodes_favg(i)
                        indx = index_favg(nodes_favg(i))
                        len = len_trim (data_string)
-                       write (data_string(len + 1 : 120), 86)
+                       write (data_string(len + 1 : 140), 86)
      &                         cfavg(indx)
                        if (prntvar(2)) then
                           len = len_trim (data_string)
-                          write (data_string(len + 1 : 120), 86)
+                          write (data_string(len + 1 : 140), 86)
      &                         conc_total(indx)
                        end if
                        write(output_unit_number, 87) trim(data_string)
@@ -219,12 +220,32 @@ c     Output flux averaged concentrations
                     end do
                  end if
                end if
-               if (prntvar(2)) then
-                  write (output_unit_number, 80) cum_moles
-                  write (output_unit_number, 81) 
-     2                 mdot_total(n_sources + 1, 1)
-                  if (kdecay .ne. 0.) write (output_unit_number, 82) 
-     2                 mdot_total(n_sources + 1, 2)
+               if (prntvar(4)) then
+                  if (alt_string .eq. 'alt') then
+                     write (output_unit_number, 79) cum_moles
+                  else
+                     write (output_unit_number, 80) cum_moles
+                  end if
+                  if (kdecay .ne. 0.) then
+                     mdot_undecayed = mdot_total(n_sources + 1, 1) -
+     2                    mdot_total(n_sources + 1, 2)
+                     cum_produced =mdot_total(n_sources + 1, 1) - 
+     2                    mdot_total(n_sources + 1, 2) - cum_moles
+                     write (output_unit_number, 82) 
+     2                    mdot_total(n_sources + 1, 1),
+     3                    mdot_total(n_sources + 1, 2),
+     4                    mdot_undecayed
+                     if (alt_string .ne. 'alt')
+     2                    write (output_unit_number, 83) cum_produced,
+     3                    '(undecayed)'                    
+                  else
+                     cum_produced = mdot_total(n_sources + 1, 1) - 
+     2                    cum_moles
+                     write (output_unit_number, 81) 
+     2                    mdot_total(n_sources + 1, 1)
+                     if (alt_string .ne. 'alt')
+     2                    write (output_unit_number, 83) cum_produced
+                 end if
                end if
 
             else if (out_string(1:4) .eq. 'pckd') then
@@ -239,7 +260,11 @@ c     Output flux averaged concentrations
 
          else
             if(first) then
-               write (formstring, 40) nfavgzones
+               if (out_string(1:4) .eq. 'pckd') then
+                  write (formstring, 40) nfavgzones
+               else
+                  write (formstring, 41) nfavgzones
+               end if
                write(output_unit_number, formstring) (i, i=1,nfavgzones)
                write (formstring, 50) nfavgzones
             end if
@@ -247,39 +272,57 @@ c     Output flux averaged concentrations
      2           (cfavg(i),i=1,nfavgzones)
          end if
  40      format ("('  Time(days)', ",i4,"(6x, 'Zone', i4.4, 3x))")
+ 41      format ("('variables= ", '"Time(days)" ', "',", i4, 
+     &        "(1x, '", '"Zone ', "', i4.4, '", '"', "', 1x)")
  50      format ("(g16.9, ",i4,"(1x, g16.9))")
- 61      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)", "water flux (l/day)", '
-     &        '"total moles"')
- 62      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)", "water flux (l/day)"')
- 63      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)", "total moles"')
- 64      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)"')
- 65      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)", ',
-     &        '"water flux (l/day)", "total moles"')
- 66      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)", ',
-     &        '"water flux (l/day)"')
- 67      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)", ',
-     &        '"total moles"')
- 68      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)"')
- 73      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles)", "total moles"')
- 74      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles)"')
- 75      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles)", "total moles"')
- 76      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles)"')
- 80      format ('text = "Total moles in system = ', g16.9, '"')
+ 61      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)", ',
+     &        '"Water_Flux (l/day)", "Total_Cell_Mass (moles)"')
+ 62      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)", ',
+     &        '"Water_Flux (l/day)"')
+ 63      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)"')
+ 64      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)"')
+ 65      format ('variables= "X (m)", "Y (m)", "Z (m)", ',
+     &        '"Node_parent", "Node_subgrid", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)", ',
+     &        '"Water_Flux (l/day)", "Total_Cell_Mass (moles)"')
+ 66      format ('variables= "X (m)", "Y (m)", "Z (m)", ',
+     &        '"Node_parent", "Node_subgrid", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)", ',
+     &        '"Water_Flux (l/day)"')
+ 67      format ('variables= "X (m)", "Y (m)", "Z (m)", ',
+     &        '"Node_parent", "Node_subgrid", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)"')
+ 68      format ('variables= "X (m)", "Y (m)", "Z (m)", ',
+     &        '"Node_parent", "Node_subgrid", ',
+     &        '"Flux_Avgeraged_Concentration (moles/l)"')
+ 73      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Solute_Mass (moles)", "Total_Cell_Mass (moles)"')
+ 74      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Solute_Mass (moles)"')
+ 75      format ('variables= "X (m)", "Y (m)", "Z (m)", ',
+     &        '"Node_parent", "Node_subgrid", ',
+     &        '"Flux_Avgeraged_Concentration (moles)", ',
+     &        '"Total_Cell_Mass (moles)"')
+ 76      format ('variables= "X (m)", "Y (m)", "Z (m)", ',
+     &        '"Node_parent", "Node_subgrid", ',
+     &        '"Flux_Avgeraged_Concentration (moles)"')
+ 79      format ('text = "Total moles in output nodes= ', g16.9, '"')
+ 80      format ('text = "Total moles in system   = ', g16.9, '"')
  81      format ('text = "Total moles from source = ', g16.9, '"')
- 82      format ('text = "Total moles decayed = ', g16.9, '"')
- 84      format ('text = "Total mobile moles in system = ', g16.9, '"')
+ 82      format ('text = "Total moles from source = ', g16.9, 
+     &        ', moles decayed = ', g16.9, ', moles undecayed = ',
+     &        g16.9, '"')
+c     82      format ('text = "Total moles decayed = ', g16.9, '"')
+ 83      format ('text = "Total moles that exited = ', g16.9, a, '"') 
+ 84      format ('text = "Total moles in system   = ', g16.9, 
+     &        ', mobile moles  = ', g16.9, '"')
+c     84      format ('text = "Total mobile moles in system = ', g16.9, '"')
  85      format (3(g16.9, 1x), i7, 1x, g16.9)
  86      format (1x, g16.9)
  87      format (a)
@@ -339,37 +382,46 @@ c     Resident concentrations
                end if
             end if
          end if
- 90      format ('zone t="time ', g16.9,'"')
- 91      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)", "mobile conc (moles/l)", '
-     &        '"total moles"')
- 31      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)", "mobile conc (moles/l)", '
-     &        '"total moles", "total mobile"')
- 92      format ('variables= "x", "y", "z", "node", ',
-     &        '"concentration (moles/l)", "mobile conc (moles/l)"')
- 93      format ('variables= "x", "y", "z", "node", ',
-     &        '"mobile conc (moles/l)", "total moles"')
- 33      format ('variables= "x", "y", "z", "node", ',
-     &        '"mobile conc (moles/l)", "total moles", "total mobile"')
- 94      format ('variables= "x", "y", "z", "node", ',
-     &        '"mobile conc (moles/l)"')
- 95      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)", ',
-     &        '"mobile conc (moles/l)", "total moles"')
- 35      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)", ',
-     &        '"mobile conc (moles/l)", "total moles", "total mobile"')
- 96      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "concentration (moles/l)", ',
-     &        '"mobile conc (moles/l)"')
- 97      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "mobile conc (moles/l)", "total moles"')
- 37      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "mobile conc (moles/l)", "total moles",',
-     &        ' "total mobile"')
- 98      format ('variables= "x", "y", "z", "node_parent", ',
-     &        '"node_subgrid", "mobile conc (moles/l)"')
+ 90      format ('zone t="time ', g16.9, ' days"')
+ 91      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Total_Concentration (moles/l)", ',
+     &        '"Mobile_Concentration (moles/l)", '
+     &        '"Total_Cell_Mass (moles)"')
+ 31      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Total_Concentration (moles/l)", ',
+     &        '"Mobile_Concentration (moles/l)", '
+     &        '"Total_Cell_Mass (moles)", "Mobile_Cell_Mass (moles)"')
+ 92      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Total_Concentration (moles/l)", ',
+     &        '"Mobile_Concentration (moles/l)"')
+ 93      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Mobile_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)"')
+ 33      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Mobile_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)", "Mobile_Cell_Mass (moles)"')
+ 94      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node", ',
+     &        '"Mobile_Concentration (moles/l)"')
+ 95      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node_parent", ',
+     &        '"Node_subgrid", "Total_Concentration (moles/l)", ',
+     &        '"Mobile_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)"')
+ 35      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node_parent", ',
+     &        '"Node_subgrid", "Total_Concentration (moles/l)", ',
+     &        '"Mobile_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)", "Mobile_Cell_Mass (moles)"')
+ 96      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node_parent", ',
+     &        '"Node_subgrid", "Total_Concentration (moles/l)", ',
+     &        '"Mobile_Concentration (moles/l)"')
+ 97      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node_parent", ',
+     &        '"Node_subgrid", "Mobile_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)"')
+ 37      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node_parent", ',
+     &        '"Node_subgrid", "Mobile_Concentration (moles/l)", ',
+     &        '"Total_Cell_Mass (moles)",',
+     &        ' "Mobile_Cell_Mass (moles)"')
+ 98      format ('variables= "X (m)", "Y (m)", "Z (m)", "Node_parent", ',
+     &        '"Node_subgrid", "Mobile_Concentration (moles/l)"')
          if(out_string(1:4).eq.'pckd') then
             write(output_unit_number,*) current_time
             write(output_unit_number,*) (conc_mobile(i), 
@@ -402,51 +454,72 @@ c     Resident concentrations
                      end if
                   end if
                end if
-                  
+               
                if (prntvar(1)) then
                   len = len_trim(data_string)
-                  write (data_string(len + 1 : 120), 86) 
+                  write (data_string(len + 1 : 140), 86) 
      &                 concentration(i)
                end if
                len = len_trim(data_string)
-               write (data_string(len + 1 : 120), 86) 
+               write (data_string(len + 1 : 140), 86) 
      &              conc_mobile(i)
                if (prntvar(2)) then
                   len = len_trim(data_string)
-                  write (data_string(len + 1 : 120), 86) 
+                  write (data_string(len + 1 : 140), 86) 
      &                 conc_total(i)
                end if
                if (prntvar(3)) then
                   len = len_trim(data_string)
-                  write (data_string(len + 1 : 120), 86) 
+                  write (data_string(len + 1 : 140), 86) 
      &                 conc_mobtot(i)
                end if
                cum_moles = cum_moles + conc_total(i)
                cum_mobile = cum_mobile + conc_mobtot(i)
                write(output_unit_number, 87) trim(data_string)
             end do
-            if (prntvar(2)) then
-               write (output_unit_number, 80) cum_moles
-               if (prntvar(3))
-     2              write (output_unit_number, 84) cum_mobile
-               write (output_unit_number, 81) 
-     2              mdot_total(n_sources + 1, 1)
-               if (kdecay .ne. 0.) write (output_unit_number, 82) 
-     2              mdot_total(n_sources+1, 2)
-           end if
+            if (prntvar(4)) then
+               if (prntvar(5)) then
+                  write (output_unit_number, 84) cum_moles, cum_mobile
+               else
+                  write (output_unit_number, 80) cum_moles
+               end if 
+               if (kdecay .ne. 0.) then
+                  cum_produced = max (0.d0,
+     2                 (mdot_total(n_sources + 1, 1) - 
+     3                 mdot_total(n_sources + 1, 2) - cum_moles))
+                  mdot_undecayed = mdot_total(n_sources + 1, 1) -
+     2                 mdot_total(n_sources + 1, 2)
+                  write (output_unit_number, 82) 
+     2                 mdot_total(n_sources + 1, 1),
+     3                 mdot_total(n_sources + 1, 2),
+     4                 mdot_undecayed
+                  write (output_unit_number, 83) cum_produced, 
+     2                 '(undecayed)'
+               else
+                  cum_produced = mdot_total(n_sources + 1, 1) - 
+     2                 cum_moles
+                  write (output_unit_number, 81) 
+     2                 mdot_total(n_sources + 1, 1)
+                  write (output_unit_number, 83) cum_produced
+               end if
+c     write (output_unit_number, 83) cum_produced
+            end if
 
  100        format (1x, 3(g16.9, 1x), i7, 3(1x, g16.9))
- 101        format ('zone t="time ',g16.9,'", VARSHARELIST = ([1-3]=1)')
- 102        format ('zone t="time ',g16.9,'", VARSHARELIST = ([1-4]=1)')
- 103        format ('zone t="time ',g16.9,
-     &           '", VARSHARELIST = ([1-3,6]=1)')
- 104        format ('zone t="time ',g16.9,
-     &           '", VARSHARELIST = ([1-4,6]=1)')
- 105        format ('zone t="time ',g16.9,'", VARSHARELIST = ([1-5]=1)')
- 106        format ('zone t="time ',g16.9,
-     &           '", VARSHARELIST = ([1-3,7]=1)')
- 107        format ('zone t="time ',g16.9,
-     &           '", VARSHARELIST = ([1-5,7]=1)')
+ 101        format ('zone t="time ', g16.9, 
+     &           ' days", VARSHARELIST = ([1-3]=1)')
+ 102        format ('zone t="time ', g16.9,
+     &           ' days", VARSHARELIST = ([1-4]=1)')
+ 103        format ('zone t="time ', g16.9,
+     &           ' days", VARSHARELIST = ([1-3,6]=1)')
+ 104        format ('zone t="time ', g16.9,
+     &           ' days", VARSHARELIST = ([1-4,6]=1)')
+ 105        format ('zone t="time ', g16.9,
+     &           ' days", VARSHARELIST = ([1-5]=1)')
+ 106        format ('zone t="time ', g16.9,
+     &           ' days", VARSHARELIST = ([1-3,7]=1)')
+ 107        format ('zone t="time ', g16.9,
+     &           ' days", VARSHARELIST = ([1-5,7]=1)')
  110        format (i7, 3(1x, g16.9))
  111        format (g16.9, 2(1x, g16.9))
  112        format (g16.9)

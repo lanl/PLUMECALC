@@ -1,6 +1,6 @@
       subroutine read_sptr_info()
 !***********************************************************************
-! $Id: read_sptr_info.f,v 1.1 2006/05/17 15:23:25 zvd Exp $
+! $Id: read_sptr_info.f,v 1.2 2007/02/14 20:43:21 zvd Exp $
 !***********************************************************************
 !  Copyright, 2002, 2004,  The  Regents of the University of California.
 !  This  program  was  prepared by  the  Regents  of the  University  of
@@ -77,6 +77,7 @@
       integer cellno
       integer i, j, k
       real*8 tdummy, xdummy, ydummy, zdummy
+      real*8, allocatable :: start_time_tr(:)
       character*30 verno
       character*11 jdate
       character*8 jtime
@@ -84,7 +85,6 @@
       character*80 ptitle
       integer, allocatable :: cells_working(:)
       integer, allocatable :: num_part(:), n_pack(:), lines(:)
-
 
 !***********Begin executable statements here**********
 
@@ -106,7 +106,7 @@
             read(sptr_unit_number(j)) ptitle
             read(sptr_unit_number(j)) num_part(j)
             read(sptr_unit_number(j)) char3
-            if (char3 .ne. 'XYZ') then
+            if (char3 .ne. 'XYZ' .and. char3 .ne. 'TRA') then
                rewind(sptr_unit_number(j))
                read(sptr_unit_number(j)) verno, jdate, jtime
                read(sptr_unit_number(j)) ptitle
@@ -118,7 +118,8 @@
             read(sptr_unit_number(j), *) num_part(j)
             read(sptr_unit_number(j), *) dummy_string
             char3 = dummy_string(1:3)
-            if (char3 .ne. 'XYZ' .and. char3 .ne. 'Par') 
+            if (char3 .ne. 'XYZ' .and. char3 .ne. 'Par' .and.
+     &           char3 .ne. 'TRA' .and. char3 .ne. 'COR') 
      &           backspace (sptr_unit_number(j))
          end if
          npart = npart + num_part(j)
@@ -133,9 +134,12 @@
       allocate(n_cells(npart))
       allocate(cells_working(npart))
       allocate(cell_index(npart))
+      allocate(start_time_tr(npart))
+
       cell_index = 0
       cells_working = 0
       n_cells = 0
+      start_time_tr = 0.0
 
       do j = 1, sptr_num
          if(sptr_bin(j)) then
@@ -197,6 +201,13 @@
          allocate(x_packed(n_packed))
          allocate(y_packed(n_packed))
          allocate(z_packed(n_packed))
+      else
+         if (char3 .eq. 'TRA') then
+            deallocate(cell_packed, time_packed)
+            n_packed = n_packed - npart
+            allocate(cell_packed(n_packed))
+            allocate(time_packed(n_packed))
+         end if
       end if
 
 !     Initialize working array for building the cell and time arrays
@@ -216,12 +227,14 @@
             read(sptr_unit_number(j)) verno, jdate, jtime
             read(sptr_unit_number(j)) ptitle
             read(sptr_unit_number(j)) num_part(j)
-            if (char3 .eq. 'XYZ') read(sptr_unit_number(j)) char3
+            if (char3 .eq. 'XYZ' .or. char3 .eq. 'TRA') 
+     &           read(sptr_unit_number(j)) char3
          else
             read(sptr_unit_number(j),'(a4)') dummy_string
             read(sptr_unit_number(j),'(a4)') dummy_string
             read(sptr_unit_number(j),'(a4)') dummy_string
-            if (char3 .eq. 'XYZ' .or. char3 .eq. 'Par') 
+            if (char3 .eq. 'XYZ' .or. char3 .eq. 'Par' .or. char3 .eq.
+     &           'TRA' .or. char3 .eq. 'COR') 
      &           read(sptr_unit_number(j),'(a4)') dummy_string
          end if
 
@@ -281,10 +294,22 @@
                   end if
                end if
 !        Store time and cell in packed arrays
-               time_packed(cells_working(partno)) = tdummy
-               cell_packed(cells_working(partno)) = cellno
+               if (char3 .eq. 'TRA') then
+                  if (cellno.le.0) then 
+                     start_time_tr(partno) = tdummy
+                  else	
+                     time_packed(cells_working(partno)) = 
+     &                    tdummy - start_time_tr(partno)
+                     cell_packed(cells_working(partno)) = cellno
 !        Increment working array pointer by 1
-               cells_working(partno) = cells_working(partno) + 1
+                     cells_working(partno) = cells_working(partno) + 1
+                  end if
+               else		
+                  time_packed(cells_working(partno)) = tdummy
+                  cell_packed(cells_working(partno)) = cellno
+!        Increment working array pointer by 1
+                  cells_working(partno) = cells_working(partno) + 1
+               end if
  40         end do
 !     ENDFOR each line in sptr file
          end if
@@ -293,6 +318,6 @@
          close (sptr_unit_number(j))
       end do
 
-      deallocate(cells_working, num_part, n_pack, lines)
+      deallocate(cells_working, num_part, n_pack, lines, start_time_tr)
 
       end subroutine read_sptr_info

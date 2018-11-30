@@ -38,7 +38,7 @@
 
          call variable_update()
 
-c         call delayed_times
+         call delayed_times
       
       endif
       

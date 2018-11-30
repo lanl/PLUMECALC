@@ -73,6 +73,7 @@
       integer, allocatable, dimension(:,:,:) :: itf_curve
       real, allocatable, dimension(:,:,:) :: wt_curve
       real weight_factor
+      real*8 sigma_low, sigma_high, omega_low, omega_high
       real*8, allocatable, dimension(:) :: param1 
       real*8, allocatable, dimension(:) :: param2
       real*8, allocatable, dimension(:) :: param3
@@ -81,6 +82,7 @@
       integer, allocatable, dimension(:,:,:) :: param_density
 
       logical :: pfrac_read = .false.
+      logical :: error_flag = .false.
       integer :: ipartout = 0
 
       end module compfrac

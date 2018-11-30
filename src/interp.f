@@ -27,7 +27,7 @@
 !**********************************************************************
 ! Return the interpolated time value
 
-      use compfrac      
+      use compfrac
       implicit none
 
       real*8 par1v, par2v, par3v, concv, timev, interp_bilin
@@ -36,7 +36,7 @@
       integer ith, cur_node
       real weight(4)
       integer points(4)
-
+      
       if(curve_structure.eq.1) then
 
 c     Free format structure - find closest curve and set indices
@@ -134,8 +134,37 @@ c     to nearest neighbor scheme
       else
 c     Regular structure to curves - do simple interpolation
 C     Find the T vs C curves indices
+         sigma_low = min (sigma_low, par1v)
+         sigma_high = max (sigma_high, par1v)
+         omega_low = min (omega_low, par2v)
+         omega_high = max (omega_high, par2v)
          call indices (ilow, ihigh, par1v, param1, nump1)
+         if (ilow .eq. ihigh) then
+            if (par1v .ne. param1(ilow)) then
+c     If we don't fall exactly onto this curve
+               error_flag = .true.
+               if (ilow .eq. 1) then
+                  ilow = 0
+                  ihigh = ilow + 1
+               else if (ilow .eq. nump1) then
+                  ilow = ihigh - 1
+                  par1v = param1(ilow)
+               end if
+            end if
+         end if
          call indices (jlow, jhigh, par2v, param2, nump2)
+         if (jlow .eq. jhigh) then
+c We have reparameterized omega such that it always lands on omega=1.
+            if (par2v .ne. param2(jlow)) then
+               error_flag = .true.
+               par2v = param2(jlow)
+               if (jlow .eq. 1) then
+                  jhigh = jlow + 1
+               else if (ilow .eq. nump2) then
+                  jlow = jhigh - 1
+               end if
+            end if
+         end if
          if (nump3 .gt. 1) then
             call indices (klow, khigh, par3v, param3, nump3)
          else
@@ -148,7 +177,10 @@ C     Find the T vs C curves indices
          end if
       end if
 C Find time values
-      if (ilow .eq. ihigh) then
+      if (ilow .eq. 0) then
+c     Set retention time to sigma/omega value
+         timev = par1v
+      else if (ilow .eq. ihigh) then
          if (jlow .eq. jhigh) then
             if (klow .eq. khigh) then
                timec(1) = ftime (ilow, jlow, klow, fm, concv)
@@ -160,8 +192,8 @@ C Find time values
             else 
                timec(1) = ftime (ilow, jlow, klow, fm, concv)
                timec(2) = ftime (ilow, jlow, khigh, fm, concv)
-                  dltime = interp2 (param3(klow), param3(khigh), par3v,
-     .                 timec(1), timec(2))
+               dltime = interp2 (param3(klow), param3(khigh), par3v,
+     .              timec(1), timec(2))
                if(numparams.le.2) then
                   timev = 10.0 ** dltime
                else

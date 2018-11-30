@@ -170,6 +170,13 @@ c pack the cell_packed, time_packed, and cell_index arrays
       
 !     These will be needed for routine delayed_times which is now
 !     called after subgridding has been performed
+      allocate(r8_work(n_grid_points_sg))
+      call vector_to_sg_vector_r8(rfac,r8_work)
+      deallocate(rfac)
+      allocate(rfac(n_grid_points_sg))
+      rfac = r8_work
+      deallocate(r8_work)
+ 
       if (diffusion_model) then
          allocate(r8_work(n_grid_points_sg))
          call vector_to_sg_vector_r8(sigma_partial,r8_work)

@@ -70,11 +70,11 @@ c     Error function solution - infinite fracture spacing
                if (iptty .gt. 0) write (iptty, 10) 
                stop
             else
-! Find time delay
+! Find time delay               
                timedelay = interp (ith, cur_node,
-     2              par1v, par2v, par3v, fm, concv)
+     2              par1v/par2v, par2v/par2v, par3v, fm, concv)
 ! Compute adjusted time
-               timev = tau_zero * (timedelay + ret_factor)
+               timev = timedelay * par2v**2 +  tau_zero * ret_factor
             end if
          end if
       end if

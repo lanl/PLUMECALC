@@ -83,6 +83,6 @@
       integer noutnodes
       integer, allocatable :: ioutnode(:)
       integer, allocatable :: out_cell(:)
-      logical :: sparse, prntvar(3)
+      logical :: sparse = .false., prntvar(5) = .false.
 
       end module comsim

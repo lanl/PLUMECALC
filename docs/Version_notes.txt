@@ -1,0 +1,169 @@
+
+Tue Jun 25 14:05:42 MDT 2013
+VERS_V2.3.3 (most recent version) pulled from Repository
+   hg clone https://ancho.lanl.gov/fehm/hg/plumecalc
+
+
+VERS_V2.3.3 RELEASE NOTES:
+
+The manual V2.3.2 was not updated because the updates did not change
+how the code is run or basic functionality. Updated Figures can be
+seen in Complex_subgrid_figures.pdf. See discussion below. 
+
+-------
+Response to query for differences between V2.3.2 and V2.3.3
+From Zora Dash to Ian Nienhueser May 2011
+
+The latest version of PLUMECALC corrects the subgridding issue identified 
+by Dennis Fryar.  The problem was found when using subgridding in PLUMECALC V2.3.2 
+on a simple model that used FEHM streamline particle tracking with dispersion. 
+The problem of over estimating the concentration was identified as an
+implementation issue related to when the delay applied due to diffusion was
+computed. In the original implementation of mobile concentrations, the time
+delay was calculated before any subgridding occurred. This lead to an over
+calculation of concentration no matter what level of subgridding was used.
+This problem has been corrected by doing the time delay calculations after the
+subgridding. 
+See subgrid_problem.doc
+
+-------
+ 
+This version also implements a modified integration scheme for the source term 
+function. We identified problems in the numerical integration scheme 
+when small decay constants were used, especially if the source term 
+wasn't constant but was increasing or decreasing. I have rerun all of my 
+test cases and found that there are only minor differences in results 
+due to the modified integration scheme. 
+
+Test cases were rerun with this version V2.3.3.  Of particular interest 
+are the test results associated with the complex grid subgrid example documented 
+in Sections 6.3.2 and 6.3.3 of the Users Manual (Dash et al, 2011)
+Figures 32 to 39 (and specifically Figures 35, 37, 38 and 39).
+With exception of the case run with both dispersion and diffusion,
+as expected, there are no visually discernable differences.
+See Complex_subgrid_figures.pdf
+
+
+SUMMARY LOG MESSAGES:
+
+Diff		Rev	Age	Author	Log Message
+  	
+@21:c4da1fb88f54  	20 months	zvd	 Release PLUMECALC V2.3.3
+  	
+@20:7af4b2014665  	20 months	zvd	 Add exxecutables for current release. Release PLUMECALC V2.3.3
+  	
+@19:be83f4de2fec  	20 months	zvd	 Modified code to comput time delays after subgridding when subgridding is …
+  	
+@18:3c35ba99e9c5  	2 years	zvd	 Added tag Release PLUMECALC V2.3.2 for changeset 7069cc9e933e
+  	
+@17:7069cc9e933e  	2 years	zvd	 Add executables for current release.
+  	
+@16:f682ce9865d0  	2 years	zvd	 Changes incorporate all updates to PLUMECALC V2.2 that were made when …
+  	
+@15:6fa4af72072b  	2 years	zvd	 Reorganize repository and put source code into subdirectory src.
+  	
+@14:406f90e402a8  	5 years	moulton	 Removed old CVSROOT directory
+  	
+@13:574ece0454f0  	5 years	convert-repo	 update tags
+  	
+@12:2dca36560150  	6 years	zvd	 Modified to account for time=0.0 in sptr2 files with XYZ data.
+  	
+@11:5839af6b39e3  	6 years	zvd	 Convert volumes from m3 to liters so output will be in liters.
+  	
+@10:81e9e6ee5e4e  	7 years	zvd	 Added option to input secondary spacing instead of computing it.
+  	
+@9:cffc8d4121c3  	7 years	zvd	 Eliminated check for irregular input to reduce size of error/information …
+  	
+@8:77bfbf757eb6  	7 years	zvd	 Added concntration threshold criteria for favg pckd output option.
+  	
+@7:c8bf84cd94bd  	7 years	zvd	 Fixed formatting problem on Sun.
+  	
+@6:a9dfe9e5bb5c  	7 years	zvd	 Added a minimum concentration threshold for output.
+  	
+@5:5cd5b5848a5d  	7 years	zvd	 Fixed some minor bugs.
+  	
+@4:66c497124bb8  	7 years	zvd	 Fixed read_mdot_info so blank lines are not counted when reading flux …
+  	
+@3:0887c9cff063  	7 years	zvd	 added optional velocity correction factor
+  	
+@2:5389a1bc5073  	7 years	zvd	 fixed binary read
+  	
+@1:e64988a67e42  	7 years	zvd	 Add files for PLUMECALC V2.2 to repository
+  	
+@0:5cce78b732d5  	7 years	zvd	 initial checkin
+
+FULL LOG MESSAGES:
+
+
+Diff		Rev	Age	Author	
+  	
+@21:c4da1fb88f54  	20 months	zvd	
+Release PLUMECALC V2.3.3
+  	
+@20:7af4b2014665  	20 months	zvd	
+Add exxecutables for current release. Release PLUMECALC V2.3.3
+  	
+@19:be83f4de2fec  	20 months	zvd	
+Modified code to comput time delays after subgridding when subgridding is invoked. Modified decay calculations to better handle small decay constants (large half-lifes), numerical integration was blowing up due to formulation.
+  	
+@18:3c35ba99e9c5  	2 years	zvd	
+Added tag Release PLUMECALC V2.3.2 for changeset 7069cc9e933e
+  	
+@17:7069cc9e933e  	2 years	zvd	
+Add executables for current release.
+  	
+@16:f682ce9865d0  	2 years	zvd	
+Changes incorporate all updates to PLUMECALC V2.2 that were made when resident mobile concentration was implemented and regular plumecalc and subgrid plumecalc were merged into a single code. The base version for this work is PLUMECALC V2.3 and final changes are tagged PLUMECALC V2.3.2.
+  	
+@15:6fa4af72072b  	2 years	zvd	
+Reorganize repository and put source code into subdirectory src.
+  	
+@14:406f90e402a8  	5 years	moulton	
+Removed old CVSROOT directory
+  	
+@13:574ece0454f0  	5 years	convert-repo	
+update tags
+  	
+@12:2dca36560150  	6 years	zvd	
+Modified to account for time=0.0 in sptr2 files with XYZ data.
+  	
+@11:5839af6b39e3  	6 years	zvd	
+Convert volumes from m3 to liters so output will be in liters.
+
+  	
+@10:81e9e6ee5e4e  	7 years	zvd	
+Added option to input secondary spacing instead of computing it.
+  	
+@9:cffc8d4121c3  	7 years	zvd	
+Eliminated check for irregular input to reduce size of error/information
+file. (Can be reinstated for debugging if needed.)
+  	
+@8:77bfbf757eb6  	7 years	zvd	
+Added concntration threshold criteria for favg pckd output option.
+  	
+@7:c8bf84cd94bd  	7 years	zvd	
+Fixed formatting problem on Sun.
+  	
+@6:a9dfe9e5bb5c  	7 years	zvd	
+Added a minimum concentration threshold for output.
+  	
+@5:5cd5b5848a5d  	7 years	zvd	
+Fixed some minor bugs.
+  	
+@4:66c497124bb8  	7 years	zvd	
+Fixed read_mdot_info so blank lines are not counted when reading flux data.
+Added packed option for output of flux averaged concentrations over the
+entire domain.
+  	
+@3:0887c9cff063  	7 years	zvd	
+added optional velocity correction factor
+  	
+@2:5389a1bc5073  	7 years	zvd	
+fixed binary read
+  	
+@1:e64988a67e42  	7 years	zvd	
+Add files for PLUMECALC V2.2 to repository
+  	
+@0:5cce78b732d5  	7 years	zvd	
+initial checkin
+

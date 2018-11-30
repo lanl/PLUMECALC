@@ -40,8 +40,12 @@ c
       use comparttr, only : npart, n_cells, time_packed, cell_packed,
      2     adv_packed
       use comgrid, only : n_grid_points
+      use compfrac, only : pfrac_read, error_flag, nump1, nump2,
+     2     sigma_low, sigma_high, omega_low, omega_high, param1, param2
       use comrock, only : rfac, vcf, itrc_diff, sigma_partial, 
      2     omega_partial, rd_frac, rseed, diffusion_model
+      use comsim, only : prntvar
+      use comunits, only : error_unit_number
       implicit none
 
       logical corrections
@@ -78,6 +82,7 @@ c***************** Begin executable statements here**********
          if(rfac(i).ne.1..or.diffusion_model) then
 !     Set flag to denote corrections needed
             corrections = .true.
+            prntvar(5) = .true.
 !     Exit loop over each cell
             exit check_loop
          end if
@@ -108,18 +113,19 @@ c***************** Begin executable statements here**********
                      sigma=sigma_partial(cell_packed(j))
                      omega=omega_partial(cell_packed(j))
                   else
-                     sigma=sigma_partial(cell_packed(j))/
-     2                    sqrt(delta_time)
-                     omega=omega_partial(cell_packed(j))*
-     2                    sqrt(delta_time)
+                     omega = omega_partial(cell_packed(j))*delta_time
+                     sigma = sigma_partial(cell_packed(j))
+c                     sigma=sigma_partial(cell_packed(j))/
+c     2                    sqrt(delta_time)
+c                     omega=omega_partial(cell_packed(j))*
+c     2                    sqrt(delta_time)
                   end if
                   par3v = 1.0
                   fm = 1
                   call time_delay(tflag,1,cell_packed(j),sigma,omega,
      2                 par3v,fm,rd_frac(itrc_diff(cell_packed(j))),
      3                 rseed,delta_time, conc_ret,time_diffused) 
-                  time_current = time_current + 
-     2                 time_diffused
+                  time_current = time_current + time_diffused
                else
                   time_current = time_current + 
      2                 rfac(cell_packed(j))*delta_time
@@ -141,7 +147,37 @@ c***************** Begin executable statements here**********
          end do
 !        ENDFOR each particle
       end if
-!     ENDIF corrections are needed
-
+!     ENDIF corrections are needed      
+      if (pfrac_read) then
+         if (error_flag) then
+!        Issue warning for values outside of defined parameter space
+            write (error_unit_number, 8)
+            write (error_unit_number, 9)
+            if (sigma_low .lt.  param1(1)) then
+               write (error_unit_number, 14) param1(1)
+            end if
+            if (sigma_high .gt. param1(nump1)) then
+               write (error_unit_number, 15)
+            end if
+         else
+            write (error_unit_number, 10)
+         end if
+         write (error_unit_number, 11) param1(1), param1(nump1), 
+     2        param2(1), param2(nump2)
+         write (error_unit_number, 12)
+         write (error_unit_number, 11) sigma_low, sigma_high, 
+     2        omega_low, omega_high
+      end if
+ 
+ 8    format ('                ********** WARNING **********')
+ 9    format ('Diffusion model used values outside of defined ',
+     2     'parameter space:')
+ 10   format ('Diffusion model defined parameter space:')
+ 11   format ('min sigma = ', g16.9, ' max sigma = ', g16.9,
+     2     ' min omega = ', g16.9, ' max omega = ', g16.9) 
+ 12   format ('Range needed:')
+ 14   format ('Retention time set to sigma/omega for values less than',
+     2     1x, g16.9)
+ 15   format ('Retention time approximates error function solution')
       return
       end subroutine delayed_times
